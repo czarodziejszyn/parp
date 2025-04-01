@@ -1,8 +1,8 @@
-lokacja(cela, 'Jesteś w swojej celi.')
-lokacja(stolowka, 'Jesteś na więziennej stołówce.')
-lokacja(spacerniak, 'Jesteś na spacerniaku.')
-lokacja(biblioteka, 'Jesteś w bibliotece.')
-lokacja(korytarz, 'Jesteś na korytarzu.')
+lokacja(cela, 'Jesteś w swojej celi.').
+lokacja(stolowka, 'Jesteś na więziennej stołówce.').
+lokacja(spacerniak, 'Jesteś na spacerniaku.').
+lokacja(biblioteka, 'Jesteś w bibliotece.').
+lokacja(korytarz, 'Jesteś na korytarzu.').
 
 :- dynamic jestem/1.
 
