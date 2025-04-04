@@ -1,8 +1,15 @@
 :- dynamic i_am_at/1, at/2, holding/1, knife_uses/1, spoon_uses/1, ventilation_open/0, in_shaft/0.
+:- dynamic bar_screws/2, bar_removed/1.
 :- retractall(at(_, _)), retractall(i_am_at(_)), retractall(knife_uses(_)), retractall(spoon_uses(_)), retractall(in_shaft).
+:- retractall(bar_screws(_, _)), retractall(bar_removed(_)).
 
 /* Initial player location */
 i_am_at(cage_center).
+
+/* Bar screw tracking */
+bar_screws(shaft3, 0).
+bar_screws(shaft6, 0).
+bar_screws(shaft10, 0).
 
 /* Paths within the cage */
 path(cage_center, n, bed_area).
@@ -22,17 +29,16 @@ path(sink, e, toilet).
 path(ventilation, n, shaft1) :- can_escape, \+ in_shaft.
 path(shaft1, n, shaft2).
 path(shaft2, e, shaft3).
-path(shaft3, e, shaft4).
+path(shaft3, e, shaft4) :- bar_removed(shaft3).
 path(shaft4, s, shaft5).
 path(shaft5, s, shaft6).
-path(shaft6, n, shaft7).
+path(shaft6, n, shaft7) :- bar_removed(shaft6).
 path(shaft7, n, shaft8).
 path(shaft8, n, shaft9).
 path(shaft9, n, shaft10).
-path(shaft10, s, shaft11).
+path(shaft10, s, shaft11) :- bar_removed(shaft10).
 path(shaft11, w, shaft12).
 path(shaft12, n, roof).
-
 
 /* Objects in each area */
 at(paint, bed_area).
@@ -73,7 +79,7 @@ go(n) :-
     assert(i_am_at(shaft1)),
     assert(in_shaft),
     clear_screen,
-    write('You squeeze into the ventilation shaft. It\'s tight and dark...'), nl,
+    write('You squeeze into the ventilation shaft. It\'s tight and dark... use your shortcuts to escape'), nl,
     look, !.
 
 /* Direction shortcuts */
@@ -154,6 +160,7 @@ place_mannequin :-
 place_mannequin :-
         write('You can only place the mannequin in the bed area.'), nl.
 
+/* Making a ventilation mockup */
 make_vent_mockup :-
         holding(string), holding(wire), holding(cloth),
         retract(holding(string)),
@@ -164,13 +171,14 @@ make_vent_mockup :-
 make_vent_mockup :-
         write('You need string, wire, and cloth to make a ventilation mockup.'), nl.
 
+/* Placing the mockup */
 place_vent_mockup :-
     i_am_at(ventilation),
     holding(ventilation_mockup),
     ventilation_open,
     retract(holding(ventilation_mockup)),
     assert(at(ventilation_mockup, ventilation)),
-    write('You carefully place the fake ventilation cover in position. Looks real enough...'), nl, !.
+    write('You carefully place the fake ventilation cover in position. Looks real enough..., press n to escape'), nl, !.
 
 place_vent_mockup :-
     i_am_at(ventilation),
@@ -206,13 +214,45 @@ drill :-
 drill :-
     write('You need to be next to ventilation and have a knife or a spoon to drill.'), nl.
 
+/* Unscrewing bars */
+unscrew :-
+    i_am_at(Location),
+    member(Location, [shaft3, shaft6, shaft10]),
+    holding(screwdriver),
+    bar_screws(Location, Count),
+    Count < 4,
+    NewCount is Count + 1,
+    retract(bar_screws(Location, Count)),
+    assert(bar_screws(Location, NewCount)),
+    ( NewCount = 4 ->
+        assert(bar_removed(Location)),
+        write('You removed the final screw. The bar at this shaft is now open!'), nl
+    ;
+        write('You removed a screw. '), write(4 - NewCount), write(' left.'), nl
+    ), !.
+
+unscrew :-
+    i_am_at(Location),
+    member(Location, [shaft3, shaft6, shaft10]),
+    \+ holding(screwdriver),
+    write('You need a screwdriver to remove these screws.'), nl, !.
+
+unscrew :-
+    i_am_at(Location),
+    member(Location, [shaft3, shaft6, shaft10]),
+    bar_removed(Location),
+    write('The bar here is already removed.'), nl, !.
+
+unscrew :-
+    write('There are no bars to unscrew here.'), nl.
+
 /* Display inventory */
 inventory :-
         write('You are carrying: '), nl,
         holding(X),
         write('- '), write(X), nl,
         fail.
-inventory :- 
+inventory :-
         write('Nothing.'), nl.
 
 /* Clear screen */
@@ -221,22 +261,38 @@ clear_screen :-
 
 /* Descriptions of areas */
 describe(cage_center) :- write('You are in the middle of your cage, planning your escape.'), nl.
-describe(bed_area) :- write('You are at the bed area. Materials here might help build a decoy.'), nl.
+describe(bed_area) :- write('You are at the bed area. Materials here might help build a manequinn.'), nl.
 describe(toilet) :- write('You are at the toilet. You see a screwdriver here.'), nl.
 describe(storage) :- write('You are in the storage area. Some tools are here.'), nl.
 describe(south_area) :- write('You are in the southern area. Raincoats and glue are here.'), nl.
 describe(ventilation) :- write('You are next to the ventilation shaft. A possible escape route!'), nl.
 describe(sink) :- write('You are at the sink. You see string, wire, and cloth.'), nl.
+
 describe(shaft1) :- write('You are crawling through a narrow vent. It bends up ahead.'), nl.
 describe(shaft2) :- write('A tighter section. You can only move forward.'), nl.
-describe(shaft3) :- write('The shaft turns east.'), nl.
+describe(shaft3) :-
+    ( bar_removed(shaft3) ->
+        write('The shaft turns east. The metal bar has been removed.'), nl
+    ; 
+        write('The shaft turns east, but a metal bar blocks your way.'), nl
+    ).
 describe(shaft4) :- write('You keep crawling, it dips downward.'), nl.
 describe(shaft5) :- write('Still descending...'), nl.
-describe(shaft6) :- write('A brief climb begins.'), nl.
+describe(shaft6) :-
+    ( bar_removed(shaft6) ->
+        write('A brief climb begins. The bar has been removed.'), nl
+    ; 
+        write('A brief climb begins, but a metal bar blocks your path.'), nl
+    ).
 describe(shaft7) :- write('Claustrophobic. Keep moving.'), nl.
 describe(shaft8) :- write('You hear something above. Almost there?'), nl.
 describe(shaft9) :- write('It smells like fresh air...'), nl.
-describe(shaft10) :- write('You slip a little downward.'), nl.
+describe(shaft10) :-
+    ( bar_removed(shaft10) ->
+        write('You slip a little downward. The bar is gone.'), nl
+    ; 
+        write('You slip a little downward, but a metal bar blocks the way.'), nl
+    ).
 describe(shaft11) :- write('It turns west. Must be near the end.'), nl.
 describe(shaft12) :- write('There\'s light ahead!'), nl.
 describe(roof) :- write('You made it to the roof! You are free!'), nl, write('Congratulations — you escaped!'), nl, halt.
@@ -264,6 +320,7 @@ instructions :-
         write('make_vent_mockup.  -- to craft a fake ventilation cover.'), nl,
         write('place_vent_mockup. -- to place the fake vent cover.'), nl,
         write('drill.             -- to drill the real ventilation.'), nl,
+        write('unscrew.           -- to remove a screw from a barred shaft.'), nl,
         write('look.              -- to look around you.'), nl,
         write('inventory.         -- to see what you are carrying.'), nl,
         write('instructions.      -- to see this message again.'), nl,
