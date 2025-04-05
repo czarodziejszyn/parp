@@ -27,6 +27,9 @@ path(sea, s, city).
 path(sea, n, island).
 path(sea, w, shore).
 
+path(city, car, car_ending).
+path(city, bus, bus_ending)
+
 /* map out objects */
 
 /* at(object, place)*/
@@ -253,6 +256,44 @@ describe(sea) :-
         write("Twoja ucieczka prawie dobiegła końca. Została tylko kwesta gdzie popłynąć..."),nl,nl,
         nl.
 
+describe(city) :-
+        write("Płyniesz w stronę świateł San francisco."),nl,
+        write("Przeprawa wydaje się trwać znacznie dłużej niż powinna. Emocje szarpią twoimi nerwami."),nl,nl,
+        write("Dopływasz do turystycznego molo niedaleko golden gate beach."),nl,
+        write("Nie spodziewasz się tu dużej ilości ludzi tak blisko do świtu."),nl,nl,
+        write("Wchodzisz na brzeg"),nl,nl,
+        write("Teraz wystarczy wydostać się z miasta."),
+        write("Gdzieś niedaleko musi znajdowac się jakiś przystanek autobusowy."), nl,
+        write("Możesz wsiąść do byle jakiego i pojechać najdalej jak to możliwe."), nl,
+        (
+                holding(clothes)
+                -> write("Masz na sobie cywilne ubrania więc nik nie powinien cię natychmiast rozpoznać."), nl
+                ; write("ale nadal masz na sobie więzienny pasiak, byle kto od razu cię rozpozna."), nl
+        )
+        write("Zawsze można ukraść samochód.")
+        write("go(bus) albo bo(car)")
+
+describe(bus) :-
+        write("Czekasz na przystanku kilkanaście minut, aż przyjedzie autobus."), nl,
+        write("Drzwi otwierają się, a za kierownica siedzi stary kruchy mężczyzna."), nl,
+        write("Wydaje się zmęczony ...")
+        (
+                holding(clothes)
+                -> write("dzięki czemu nie zauważa, że nie kupujesz biletu."), nl,
+                write("Widocznie uznał, że masz czasowy... albo nie chce się awanturować."), nl,nl,
+                win.
+                ; write("ale widok towjego pasiaka natychmiast go rozbudza."), nl,
+                write("Wiesz, że gdziekolwiek nie wysiądziesz, pogoń będzie dyszeć ci na kark."), nl,nl
+                lose.
+        )
+
+describe(car) :-
+        write("Na pobliskim parkingu stoi kilka aut. Zbliżając się dostrzegasz w kilku z nich śpiących ludzi."), nl,
+        write("Po otaczającej cię woni wnioskujesz, że są to imprezowicze."), nl,
+        write("Próbujesz szczęścia z kilkoma samochodami, dopóki nie znajdujesz tego czego szukasz. Ktoś zapomniał zamknąć tylnych drzwi."), nl,
+        write("Szybko wchodzisz do auta i przeciskasz się na siedzenie kierowcy."), nl,
+        write("Na twoje nieszczęście, kiedy próbujesz odpalić zwierając przewody uruchamia się alarm"), nl,
+        lose.
 
 /* warnings*/
 warn_about(fence) :-
@@ -284,3 +325,13 @@ get_boat :-
         retract(i_am_at(docks)),
         assert(i_am_at(sea)), nl, !,
         look.
+
+/* win and lose */
+
+win :-
+        write("Gratuluje! Udało ci się uciec z więzienia!"), nl,
+        finish.
+
+lose :-
+        write("Mimo twoich starań, twój plan nie powiódł się na jego ostatnim etapie"), nl,
+        finish.
