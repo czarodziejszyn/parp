@@ -260,9 +260,47 @@ describe(sea) :-
         (
                 friend
                 -> write(" twój przyjaciel obiecał że będzie tam czekać"), nl
-                ; write(" ale nikt tam na ciebie nie czeka.")
+                ; write(" ale nikt tam na ciebie nie czeka, a na piechotę ciężko ci będzie gdzieś dojść.")
         )
         nl.
+
+
+describe(island) :-
+        write("Płyniesz w stronę pobliskiej Angel island."), nl,
+        write("Przeprawa wydaje się trwać znacznie dłużej niż powinna. Emocje szarpią twoimi nerwami."),nl,nl,
+        write("Dopływasz do plaży wyspy."),nl,
+        write("Uciekłeś, na razie."),nl,
+        write("Rosnący tu las i stare budynki dadzą ci schronienie na jakiś czas. Zdołasz przeczekać dzień lub kilka, ale co dalej?"),nl,
+        write("Nie masz jedzenia ani pitnej wody. Będziesz musiał niedługo popłynąć na ląd, ale tam będą cię szukać."),nl,
+        write("Wyciągasz ponton na brzeg. Wschodzące słońce pomaga ci szukać miejsca na kryjówkę."), nl,
+        win.
+
+describe(shore):-
+        write("Płyniesz w stronę zatoki Kirbiego."), nl,
+        write("Przeprawa wydaje się trwać znacznie dłużej niż powinna. Emocje szarpią twoimi nerwami."),nl,nl,
+        write("Dopływasz do brzegu"),nl,
+        write("Przed tobą widnieją stare fortyfikacje nadbrzeżne wyrastające ze stromej skarpy."),nl,
+        write("Dziurawisz swój ponton i topisz go kilka metrów od brzegu. To powinno opóźnić pościg, na jakiś czas."),nl,
+        (
+                friend
+                -> write("Niedaleko powinien czekać twój znajomy."),nl,
+                write("Jeśli rzeczywiście sie pojawił, nie powinieneś mieć dziś więcej trudności."), nl,
+                write("Zaoferował przetrzymanie cie kilka tygodni w bezpiecznym miejscu, ale dalej co?"), nl,
+                write("Nie wrócisz do normalnego życia, nie w tym kraju."), nl,
+                write("Z rozmyśleń wybudza cię dźwięk uruchamianego silnika. Kierujesz się do samochodu na skraju drogi..."),nl,
+                win
+                ; write("Kierujesz sie w stronę skarpy. Nie wiesz co dalej ze sobą zrobić."), nl,
+                write("Idziesz po odsłoniętym stoku na kilka godzin zanim zjawi się tu tłum turystów z całego kraju."), nl,
+                (
+                        holding(clothes)
+                        -> write("Przynajmniej masz szansę wtopić się w tłum na jakiś czas."),nl,
+                        write("Próbujesz odprężyć się zanim ktoś cię zobaczy. Zostaje ci jedynie iść naprzód."),nl,
+                        win.
+                        ; write("A oni natychmiast rozpoznają pasiak który masz na sobie."), nl,
+                        write("Przynajmniej będziesz mieć co opowiadać po powrocie do celi."),nl
+                        lose.
+                )
+        )
 
 describe(city) :-
         write("Płyniesz w stronę świateł San francisco."),nl,
@@ -294,6 +332,7 @@ describe(bus) :-
                 write("Wiesz, że gdziekolwiek nie wysiądziesz, pogoń będzie dyszeć ci na kark."), nl,nl
                 lose.
         )
+
 
 describe(car) :-
         write("Na pobliskim parkingu stoi kilka aut. Zbliżając się dostrzegasz w kilku z nich śpiących ludzi."), nl,
@@ -337,6 +376,7 @@ get_boat :-
 /* win and lose */
 
 win :-
+        write("Z twojego starego domu dobiega odległe wycie syren..."), nl,nl
         write("Gratuluje! Udało ci się uciec z więzienia!"), nl,
         finish.
 
