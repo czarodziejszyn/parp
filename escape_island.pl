@@ -1,7 +1,7 @@
 /* dynamic states */
-:- dynamic i_am_at/1, at/2, holding/1, fence_can_cross/1, guards_present/1, warned/1.
-:- retractall(at(_, _)), retractall(i_am_at(_)), retractall(alive(_)), retractall(fence_can_cross), retractall(warned(_)).
-
+:- dynamic i_am_at/1, at/2, holding/1, fence_can_cross/1, guards_at/1, warned/1.
+:- retractall(at(_, _)), retractall(i_am_at(_)), retractall(alive(_)), retractall(fence_can_cross), retractall(warned(_)), retractall(guards_at(_)).
+:- assert(guards_at(docks)).
 /* carry ober from prev stages */
 /* float, weapon, clothes, friend from outside*/
 :- assert(holding(float_device)), assert(holding(weapon)).
@@ -21,7 +21,7 @@ path(beach, s, sea).
 path(beach, w, docks).
 
 path(docks, e, beach).
-path(docks, e, sea).
+path(docks, w, sea).
 
 path(sea, s, city).
 path(sea, n, island).
@@ -51,15 +51,9 @@ go(Direction) :-
         path(Here, Direction, There),
         (
         i_am_at(fence)
-        -> (
-                fence_can_cross
-                -> cross_fence(waited)
-                ;(
-                        warned(fence)
-                        -> cross_fence(),!
-                        ; warn_about(fence),!
-                ),!
-        ),!
+        -> determine(fence),!
+        ; i_am_at(docks)
+        -> determine(docks), !
         ; retract(i_am_at(Here)),
         assert(i_am_at(There)),
         look,!
@@ -87,17 +81,62 @@ wait :-
         wait_at(Place).
 
 wait_at(fence) :-
-        assert(fence_can_cross),
+        fence_can_cross
+        -> fail
+        ; assert(fence_can_cross),
         write("Czekasz i obserwujesz sposób poruszania się świateł."),nl,
         write("Po kilku cyklach jesteś pewien swojej oceny."), nl,
         write("Masz okazję do przekroczenia ogrodzenia."),!, nl.
+
+wait_at(docks) :-
+        retract(guards_at(docks)),
+        assert(guards_at(someplace)),
+        write("Usiadłeś w miejscu którego nie skanują reflektory i czekasz."), nl,
+        write("Po dłuższej chwili jeden ze strażników zaczyna głośno narzekać, że na tym posterunku nic się nigdy nie dzieje."), nl,
+        write("Przysłuchujesz się rozmowie i z radością przyjmujesz ich decyzję o skoczeniu po karty."), nl, nl,
+        write("Strażnicy odchodzą, masz okazję do działania"), !, nl.
 
 wait_at(_) :-
         write("zmarnowałeś nieco czasu"),nl.
 
 
+determine(fence) :-
+        (
+                fence_can_cross
+                -> cross_fence(waited)
+                ;(
+                        warned(fence)
+                        -> die(fence),!
+                        ; warn_about(fence),!
+                ),!
+        ),!.
+
+determine(docks) :-
+        (
+                guards_at(someplace)
+                -> get_boat()
+                ; (     warned(docks)
+                        -> die(docks)
+                        ; warn_about(docks)
+                )
+        ), !.
+
+
+die(fence) :-
+        write("Rzucasz się na ogrodzenie ja tylko reflektor się od niego odsuwa."), nl,
+        write("Niestety źle wybrałeś chwilę i zanim wespniesz się na połowę wysokości otacza cię snop światła."), nl,
+        write("Słyszysz syreny alarmowe..."), nl,
+        write("Umierasz, koniec gry"), nl,
+        finish.
+
+die(docks) :-
+        write("Udaje ci się zakraść niedaleko jednego ze strażników. Jednak gdy jesteś na wyciągnięcie ręki jeden z nich obraca się w twoją stronę."), nl,
+        write("Rzucasz się w stronę łodzi w ostatnim akcie desperacji. Skaczesz i wpadasz do niej z impetem ale z pomostu słyszysz 'wyłaź! na ziemię! podnoś ręce!'."), nl,nl,
+        write("Umierasz, koniec gry"), nl,!,
+        finish.
+
 die(_) :-
-        write("Umierasz, koniec gry"), nl.
+        write("Umierasz, koniec gry"), nl,
         finish.
 
 
@@ -149,7 +188,8 @@ describe(fence) :-
         write("Sam drut byłby dość nieprzyjemną przeszkodą ale wizja dostania kulką powoduje konieczność przemyślanego podejścia do problemu."), nl, nl,
         write("Ale najpierw musisz przedostać się przez płot."), nl, nl,
         write("Reflektory obracają się w stałym tempie. Ich droga jest przewidywalna."), nl,
-        write("Jeśli spędzisz trochę czasu, znajdziesz moment kiedy nikt nie patrzy na tak kawałek płotu dość długo by się przeprawić."), nl
+        write("Jeśli spędzisz trochę czasu, znajdziesz moment kiedy nikt nie patrzy na tak kawałek płotu dość długo by się przeprawić."), nl, nl,
+        write("Na południu znajduje sie plaża"), nl
         ).
 
 describe(beach) :-
@@ -173,9 +213,23 @@ describe(beach) :-
                         ; nl,!
                 ),!
                 ; write("Nie masz niczego co pomogło by wam przeprawic się przez wody zatoki. Chyba nie przemyślałeś tego planu za dobrze."), nl,
-                write("Pozostaje ci spróbować płynąc wpław..."), nl,!
+                write("Pozostaje ci spróbować płynąc wpław..."), nl,nl,!
         ),
+        write("Na zachód - doki, na północ ogrodzenie"),nl,
         !.
+
+
+describe(docks) :-
+        write("Bardzo ostrożnymi ruchami, idziesz w stronę doku. Droga jest ciężka i długa."), nl,
+        write("Każda minuta obłożona jest ryzykiem wykrycia, każdy krok musi być wyliczony tak aby nie wejść w snop światła reflektorów."), nl,
+        write("Mimo tego, udaje ci się."), nl,nl,
+        write("Docierasz do doków."), nl,nl,
+
+        write("Dookoła molo kręci się para strażników. Na twoje szczęście, nikt się ciebie tu nie spodziewa."), nl,
+        write("To daje ci okazję."), nl,
+        write("Możesz spróbować ukraść łódź, ale nieważne jak szybko to zrobisz i tak zostaniesz zauważony tak długo jak strażnicy tu stoją."), nl,
+        write("Możesz poczekać na zmianę warty, przy odrobinie szczęścia ci dwoje postanowią zrobić sobie fajrant wcześniej."), nl, nl,
+        write("Na zachód - morze, na wschód - plaża"), nl.
 
 
 /* warnings*/
@@ -185,6 +239,10 @@ warn_about(fence) :-
         write("Najpewniej ci się nie uda bez wcześniejszego przygotowania."), nl,
         nl,
         fail.
+
+warn_about(docks) :-
+        assert(warned(docks)),
+        write("Na pewno chcesz pójść do łodzi mimo obecności strażników?"), nl.
 
 warn_about(_).
 
@@ -197,8 +255,10 @@ cross_fence(waited) :-
         write("Po największym wysiłku od kilku dni spadasz na drugą stronę."), nl, nl,!,
         look, !.
 
-cross_fence(_) :-
-        write("Rzucasz się na ogrodzenie ja tylko reflektor się od niego odsuwa."), nl,
-        write("Niestety źle wybrałeś chwilę i zanim wespniesz się na połowę wysokości otacza cię snop światła."), nl,
-        write("Słyszysz syreny alarmowe..."), nl,
-        die(fence).
+/* get in boat*/
+get_boat :-
+        write("Wykorzystujesz swoją okazję i szybko wskakujesz do łodzi. "), nl,
+        write("Szybko odwiązujesz cumę i zaczynasz wiosłować. "), nl,nl,
+        retract(i_am_at(docks)),
+        assert(i_am_at(sea)), nl, !.
+/*        write("Mimo, że opuszczasz już wyspę nie oznacza to jeszcze spokoju.")*/
