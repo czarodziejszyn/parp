@@ -1,6 +1,6 @@
 /* dynamic states */
-:- dynamic i_am_at/1, at/2, holding/1, fence_can_cross/1, guards_at/1, warned/1.
-:- retractall(at(_, _)), retractall(i_am_at(_)), retractall(alive(_)), retractall(fence_can_cross), retractall(warned(_)), retractall(guards_at(_)).
+:- dynamic i_am_at/1, at/2, holding/1, fence_can_cross/1, guards_at/1, warned/1, can_go_on_water/1.
+:- retractall(at(_, _)), retractall(i_am_at(_)), retractall(alive(_)), retractall(fence_can_cross), retractall(warned(_)), retractall(guards_at(_)), retractall(can_go_on_water).
 :- assert(guards_at(docks)).
 /* carry ober from prev stages */
 /* float, weapon, clothes, friend from outside*/
@@ -140,6 +140,17 @@ die(_) :-
         finish.
 
 
+use(float) :-
+        (
+                i_am_at(beach)
+                -> write(""), nl
+                ; write(""), nl
+        ).
+
+use(_) :-
+        write("Nie możesz tego tu użyć"), nl.
+
+
 finish :-
         nl,
         write('Gra dobiegła końca, wypisz halt. by wyjść'),
@@ -157,6 +168,8 @@ instructions :-
         write('take(Object).      -- to pick up an object.'), nl,
         write('drop(Object).      -- to put down an object.'), nl,
         */
+        write("use(Object)        -- to use object from inventory."), nl,
+
         write("wait.              -- aby zaczekać na korzystniejszy moment do działania"), nl,
         write('look.              -- aby ponownie się rozejrzeć.'), nl,
         write('instructions.      -- aby ponownie wyświetlić tą wiadomość.'), nl,
