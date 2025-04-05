@@ -254,6 +254,14 @@ describe(sea) :-
         write("Nadal ryzykujesz, że dzien zastanie cię na otwartej wodzie."),nl,
         write("Wtedy gliny bardzo szybko zrobią z tobą porządek."), nl,
         write("Twoja ucieczka prawie dobiegła końca. Została tylko kwesta gdzie popłynąć..."),nl,nl,
+        write("Na południu rozciągają się doki i plaże San Francisco, może uda ci się wtopić w tłum jeśli masz cywilne ubrania"), nl,
+        write("Na północy znajduja się niezamieszkałą wyspa. Jest na niej kilka starych fortów w których mógłyś się schować na pewien czas."), nl,
+        write("Na zachodzie jest nadbrzerze,")
+        (
+                friend
+                -> write(" twój przyjaciel obiecał że będzie tam czekać"), nl
+                ; write(" ale nikt tam na ciebie nie czeka.")
+        )
         nl.
 
 describe(city) :-
