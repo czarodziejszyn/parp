@@ -81,7 +81,10 @@ wait :-
         wait_at(Place).
 
 wait_at(fence) :-
-        write("czekasz przy płocie"), nl.
+        assert(fence_can_cross),
+        write("Czekasz i obserwujesz sposób poruszania się świateł."),nl,
+        write("Po kilku cyklach jesteś pewien swojej oceny."), nl,
+        write("Masz okazję do przekroczenia ogrodzenia."),!, nl.
 
 wait_at(_) :-
         write("zmarnowałeś nieco czasu"),nl.
@@ -103,16 +106,16 @@ instructions :-
         nl,
         write('Enter commands using standard Prolog syntax.'), nl,
         write('Available commands are:'), nl,
-        write('start.             -- to start the game.'), nl,
-        write('n.  s.  e.  w.     -- to go in that direction.'), nl,
+        write('start.             -- aby zacząć grę.'), nl,
+        write('n.  s.  e.  w.     -- aby pójść w danym kierunku.'), nl,
         /*
         write('take(Object).      -- to pick up an object.'), nl,
         write('drop(Object).      -- to put down an object.'), nl,
         */
-        write("wait.              -- to wait for a more opportune moment"), nl,
-        write('look.              -- to look around you again.'), nl,
-        write('instructions.      -- to see this message again.'), nl,
-        write('halt.              -- to end the game and quit.'), nl,
+        write("wait.              -- aby zaczekać na korzystniejszy moment do działania"), nl,
+        write('look.              -- aby ponownie się rozejrzeć.'), nl,
+        write('instructions.      -- aby ponownie wyświetlić tą wiadomość.'), nl,
+        write('halt.              -- aby skończyć grę i wyjść.'), nl,
         nl.
 
 /* This rule prints out instructions and tells where you are. */
@@ -123,24 +126,26 @@ start :-
 
 /* ---- places descriptions ---- */
 
-/* wall - stwaring place of part 3*/
+/* wall - staring place of part 3*/
 describe(wall) :-
         write("Po dłużącym się zejściu z radością witasz grunt pod stopami."), nl,
         write("Mimo, że mury więzienia już macie za sobą, do pokonania została jeszcze bariera z drutu kolczastego i wody zatoki san francisco."), nl, nl,
         write("Noc niedługo się skończy a wraz z nią twoja szansa na ucieczkę."), nl,
         write("Wiesz, że nie masz za dużo czasu"), nl, nl,
-        write("Na południe od ciebie znajduje się ogrodzeie z drutu."), nl.
+        write("Na południe od ciebie znajduje się ogrodzenie z drutu."), nl.
 
 /* fence - first obstacle */
 describe(fence) :-
         (fence_can_cross
-        -> write("Nie masz po co warać się za płot"), nl
-        ; write("Przed tobą znajduje się bariera wykonana z drutu kolczastego otaczająca budynek więzienny."),nl,
+        -> write("Nie masz po co wracać się za płot"), nl
+        ; write("Przed tobą znajduje się bariera wykonana z drutu kolczastego otaczająca budynek więzienny."), nl,
         write("Teren wokół niej przeszukują reflektory. Wiesz, że jak was zobaczą to koniec, strzelcy w wieżach strażniczych mają rozkazy zabijać na miejscu."), nl, nl,
         write("Sam drut byłby dość nieprzyjemną przeszkodą ale wizja dostania kulką powoduje konieczność przemyślanego podejścia do problemu."), nl, nl,
         write("Możesz także tuląc się sciany budynku dotrzeć do doku. Może uda znaleźć sie tam łódź."), nl,
         write("Ale to nie rozwiąże problemu płotu ..."), nl, nl,
-        write("Musisz przedostać się przez płot."), nl
+        write("Musisz przedostać się przez płot."), nl, nl,
+        write("Reflektory obracają się w stałym tempie. Ich droga jest przewidywalna."), nl,
+        write("Jeśli spędzisz trochę czasu, znajdziesz moment kiedy nikt nie patrzy na tak kawałek płotu dość długo by się przeprawić."), nl
         ).
 
 /* assert(warned(fence)), nl,*/
@@ -148,7 +153,7 @@ describe(fence) :-
 warn_about(fence) :-
         assert(warned(fence)),
         write("Na pewno chcesz rzucić się przez płot tu i teraz?"), nl,
-        write("Najpewnej ci się nie uda bez wczęsniejszego przygotowania."), nl,
+        write("Najpewniej ci się nie uda bez wcześniejszego przygotowania."), nl,
         nl,
         fail.
 
@@ -163,6 +168,6 @@ cross_fence(waited) :-
 
 cross_fence(_) :-
         write("Rzucasz się na ogrodzenie ja tylko reflektor się od niego odsuwa."), nl,
-        write("Niestety źle wybrałeś chwilę i zanim wespniesz się na połowę wysokości okawa cie snop światła."), nl,
+        write("Niestety źle wybrałeś chwilę i zanim wespniesz się na połowę wysokości otacza cię snop światła."), nl,
         write("Słyszysz syreny alarmowe..."), nl,
         die(fence).
