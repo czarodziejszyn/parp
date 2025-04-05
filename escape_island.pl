@@ -231,6 +231,15 @@ describe(docks) :-
         write("Możesz poczekać na zmianę warty, przy odrobinie szczęścia ci dwoje postanowią zrobić sobie fajrant wcześniej."), nl, nl,
         write("Na zachód - morze, na wschód - plaża"), nl.
 
+describe(sea) :-
+        write("Wypłynąłeś na otwartą wodę."), nl,
+        write("Nie możesz uwierzyć swojemu szczęściu, serce łomocze ci z podniecenia."), nl,nl,
+        write("Mimo, że opuszczasz już wyspę nie oznacza to jeszcze spokoju."),nl,
+        write("Nadal ryzykujesz, że dzien zastanie cię na otwartej wodzie."),nl,
+        write("Wtedy gliny bardzo szybko zrobią z tobą porządek."), nl,
+        write("Twoja ucieczka prawie dobiegła końca. Została tylko kwesta gdzie popłynąć..."),nl,nl,
+        nl.
+
 
 /* warnings*/
 warn_about(fence) :-
@@ -260,5 +269,5 @@ get_boat :-
         write("Wykorzystujesz swoją okazję i szybko wskakujesz do łodzi. "), nl,
         write("Szybko odwiązujesz cumę i zaczynasz wiosłować. "), nl,nl,
         retract(i_am_at(docks)),
-        assert(i_am_at(sea)), nl, !.
-/*        write("Mimo, że opuszczasz już wyspę nie oznacza to jeszcze spokoju.")*/
+        assert(i_am_at(sea)), nl, !,
+        look.
