@@ -1,9 +1,15 @@
 /* dynamic states */
-:- dynamic i_am_at/1, at/2, holding/1, fence_can_cross/1, guards_present/1, warned/2.
+:- dynamic i_am_at/1, at/2, holding/1, fence_can_cross/1, guards_present/1, warned/1.
 :- retractall(at(_, _)), retractall(i_am_at(_)), retractall(alive(_)), retractall(fence_can_cross), retractall(warned(_)).
 
-/* map out area*/
+/* carry ober from prev stages */
+/* float, weapon, clothes, friend from outside*/
+:- assert(holding(float_device)), assert(holding(weapon)).
+/*retractall(holding(_))*/
+
+/* map out area */
 i_am_at(wall).
+
 
 path(wall, s, fence).
 path(fence, n, wall).
@@ -50,13 +56,13 @@ go(Direction) :-
                 -> cross_fence(waited)
                 ;(
                         warned(fence)
-                        -> die(fence),!
+                        -> cross_fence(),!
                         ; warn_about(fence),!
-                )
-        )
+                ),!
+        ),!
         ; retract(i_am_at(Here)),
         assert(i_am_at(There)),
-        !, look
+        look,!
         ).
 
 go(_) :-
@@ -67,7 +73,7 @@ look :-
         describe(Place),
         nl,
         notice_objects_at(Place),
-        nl.
+        nl, !.
 
 notice_objects_at(Place) :-
         at(X, Place),
@@ -141,15 +147,38 @@ describe(fence) :-
         ; write("Przed tobą znajduje się bariera wykonana z drutu kolczastego otaczająca budynek więzienny."), nl,
         write("Teren wokół niej przeszukują reflektory. Wiesz, że jak was zobaczą to koniec, strzelcy w wieżach strażniczych mają rozkazy zabijać na miejscu."), nl, nl,
         write("Sam drut byłby dość nieprzyjemną przeszkodą ale wizja dostania kulką powoduje konieczność przemyślanego podejścia do problemu."), nl, nl,
-        write("Możesz także tuląc się sciany budynku dotrzeć do doku. Może uda znaleźć sie tam łódź."), nl,
-        write("Ale to nie rozwiąże problemu płotu ..."), nl, nl,
-        write("Musisz przedostać się przez płot."), nl, nl,
+        write("Ale najpierw musisz przedostać się przez płot."), nl, nl,
         write("Reflektory obracają się w stałym tempie. Ich droga jest przewidywalna."), nl,
         write("Jeśli spędzisz trochę czasu, znajdziesz moment kiedy nikt nie patrzy na tak kawałek płotu dość długo by się przeprawić."), nl
         ).
 
-/* assert(warned(fence)), nl,*/
+describe(beach) :-
+        write("Czarna tafla wody rozciąga się coraz szerzej przed twoimi oczami."), nl,
+        write("Nocna cisza przerywana jest ciągłym szumem fal rozbijających się o brzeg."), nl,
+        write("Pod twoimi stopami czujesz szorstkie wyboiste kamyki."), nl,
+        write("Dotarłeś do plaży."), nl,nl,
+        write("Kilka godzin jakie ci pozostało zmusza cię do wybrania jednej drogi."), nl, nl , !,
+        (
+                (holding(float_device); holding(weapon))
+                ->(
+                        holding(float_device)
+                        -> write("Masz przygotowany improwizowany ponton."), nl,
+                        write("Wystarczy tylko go napompować i odpłynąć"), nl,nl,!
+                        ; nl,!
+                ),
+                (
+                        holding(weapon)
+                        -> write("W kieszeni nadal znajduje się twoja improwizowana broń."), nl,
+                        write("Jeżeli masz trochę szczęścia może będziesz w stanie obezwładnic strażników przy dokach i ukraść motorówkę?"), nl,nl,!
+                        ; nl,!
+                ),!
+                ; write("Nie masz niczego co pomogło by wam przeprawic się przez wody zatoki. Chyba nie przemyślałeś tego planu za dobrze."), nl,
+                write("Pozostaje ci spróbować płynąc wpław..."), nl,!
+        ),
+        !.
 
+
+/* warnings*/
 warn_about(fence) :-
         assert(warned(fence)),
         write("Na pewno chcesz rzucić się przez płot tu i teraz?"), nl,
@@ -159,12 +188,14 @@ warn_about(fence) :-
 
 warn_about(_).
 
+
+/* fence crossing*/
 cross_fence(waited) :-
         retract(i_am_at(fence)),
         assert(i_am_at(beach)),
         write("Wyczekujesz najdłuższego okna i wspinasz sie na płot."), nl,
-        write("Po największym wysiłku od kilku dni spadasz na drugą stronę."), nl, nl,
-        !, look.
+        write("Po największym wysiłku od kilku dni spadasz na drugą stronę."), nl, nl,!,
+        look, !.
 
 cross_fence(_) :-
         write("Rzucasz się na ogrodzenie ja tylko reflektor się od niego odsuwa."), nl,
