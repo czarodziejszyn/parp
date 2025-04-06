@@ -125,7 +125,7 @@ porozmawiaj(Rozmowca) :-
     ansi_format([fg(red)], 'Nie ma tu nikogo o imieniu "~w".~n', [Rozmowca]).
 
 potrzebne_do_ucieczki([
-    drut,
+   /* drut,
     farba,
     kontakt,
     material,
@@ -136,7 +136,7 @@ potrzebne_do_ucieczki([
     sznurek,
     sztucce,
     ubrania,
-    wlosy
+    wlosy */
 ]).
 
 rozejrzyj :-
@@ -196,7 +196,8 @@ start_rozmowy :-
 
 ucieczka_z_wiezienia :-
     nl,
-    write('Masz wszystko czego potrzeba do ucieczki, pora poukrywać przedmioty po celi, żeby nie wzbudzały podejrzeń, poczekać na noc i rozpocząć ucieczkę.'), nl.
+    write('Masz wszystko czego potrzeba do ucieczki, pora poukrywać przedmioty po celi, żeby nie wzbudzały podejrzeń, poczekać na noc i rozpocząć ucieczkę.'), nl,
+    reset_game.
 
 uzyj(Przedmiot) :-
     ekwipunek(Przedmiot),
@@ -283,3 +284,42 @@ wypisz_przedmioty([]) :-
 wypisz_przedmioty(Przedmioty) :-
     ansi_format([fg(magenta)], 'Widzisz:~n', []),
     forall(member(P, Przedmioty), ansi_format([fg(magenta)], '-~w~n', [P])).
+
+
+
+reset_game :-
+    retractall(ekwipunek(_)),
+    retractall(kwestia(_, _)),
+    retractall(postac_w(_, _)),
+    retractall(pozycja_gracza(_)),
+    retractall(przedmiot_w(_, _)),
+
+    abolish(ekwipunek/1),
+    abolish(kwestia/2),
+    abolish(postac_w/2),
+    abolish(pozycja_gracza/1),
+    abolish(przedmiot_w/2),
+    abolish(akcja_uzycia/1),
+    abolish(daj/2),
+    abolish(dialog/2),
+    abolish(dialog_postaci/1),
+    abolish(dialog_sad/0),
+    abolish(ekwipunek/0),
+    abolish(idz/1),
+    abolish(instrukcje/0),
+    abolish(mapa/0),
+    abolish(porozmawiaj/1),
+    abolish(potrzebne_do_ucieczki/1),
+    abolish(rozejrzyj/0),
+    abolish(sprawdz_ucieczke/0),
+    abolish(start/0),
+    abolish(start_przedmioty/0),
+    abolish(start_postacie/0),
+    abolish(start_rozmowy/0),
+    abolish(ucieczka_z_wiezienia/0),
+    abolish(uzyj/1),
+    abolish(wez/1),
+    abolish(wypisz_postacie/1),
+    abolish(wypisz_przedmioty/1),
+
+    consult('new.pl').
