@@ -6,7 +6,7 @@
 :- retractall(time_left(_)).
 :- assert(time_left(5)).
 
-:- assert(holding(ponton)), assert(holding(bron)), assert(know(friend)), assert(know(blindspot)), assert(holding(ubrania)).
+:- assert(holding(ponton)), assert(holding(bron)), assert(know(friend)), assert(know(blindspot)), assert(holding(ubranie)).
 
 % mapa
 i_am_at(wall).
@@ -47,7 +47,7 @@ idz(Direction) :-
         i_am_at(fence)
         -> determine(fence, Direction),!
         ; i_am_at(docks)
-        -> determine(docks), !
+        -> determine(docks, Direction), !
         ; (
             There = sea
             -> (
@@ -135,15 +135,22 @@ determine(fence, Direction) :-
         % ;write('Nie ma tam przejścia.')
     ).
 
-determine(docks) :-
-    (
-        guards_at(docks)
-        -> (     warned(docks)
-            -> die(docks)
-            ; warn_about(docks)
-        )
-        ; get_boat()
-    ), !.
+determine(docks, Direction) :-
+     (
+        s = Direction
+        ->(
+                guards_at(docks)
+                -> (     warned(docks)
+                -> die(docks)
+                ; warn_about(docks)
+                )
+                ; get_boat()
+        ), !
+        ; retract(i_am_at(docks)),
+        assert(i_am_at(beach)),
+        rozejrzyj,!
+     ).
+
 
 
 die(fence) :-
@@ -170,21 +177,18 @@ uzyj(ponton) :-
         i_am_at(beach)
         ->(
             can_go_on_water
-            % -> write("Ponton jest już napompowany!"), nl
             -> ansi_format([fg(green)], 'Ponton jest już napompowany!~n', []), !
             ; assert(can_go_on_water),
             deduct_time(2),
-            write("Po dłuższym czasie pompowania ponton nabrał kształtu. "), 
+            write("Po dłuższym czasie pompowania ponton nabrał kształtu. "),
             write("Twój improwizowany majstersztyk czeka gotowy na dziewiczą podróż. "),
             write("Masz tylko nadzieję, że zdoła unieść twój ciężar... przynajmniej na tyle długo, by resztę drogi pokonać wpław. "),
             write("Na twoje szczęście morze jest dziś bardzo spokojne, żadna fala nie powinna pokrzyżować twoich planów."),!, nl,nl,
             sprawdz_czas
         )
-        % ; write("Nie jest to dobre miejsce do napompowania pontonu!"),!, nl
         ; ansi_format([fg(red)], 'Nie jest to dobre miejsce do napompowania pontonu!~n', []), !
     ),!
-    % ; write("Nie masz pontonu!"), nl,!.
-    ; ansi_format([fg(red)], 'Nie masz pontonu!~n', []), !. 
+    ; ansi_format([fg(red)], 'Nie masz pontonu!~n', []), !.
 
 uzyj(bron) :-
     holding(bron)
@@ -192,21 +196,19 @@ uzyj(bron) :-
         i_am_at(docks)
         ->(
             guards_at(docks)
-            -> assert(guards_at(someplace)),
+            -> retract(guards_at(docks)),
+            assert(guards_at(someplace)),
             assert(can_go_on_water),
             write("Strażnicy nie są przygotowani na twój atak. "),
             write("Udaje ci się zakraść niedaleko jednego ze strażników. "),
             write("Rzucasz się na bliższego sobie strażnika, i zdzieliłeś go po głowie. "),
             write("Zanim drugi zorientuje się co się dzieje, także dostaje po głowie."), nl,nl,
             write("Jesteś sam na doku..."), !,nl
-            % ; write("Nie ma tu przeciwników."), nl,!
             ; ansi_format([fg(red)], 'Nie ma tu przeciwników.~n', []), !
         )
-        % ; write("Nie ma tu przeciwników."), nl,!
         ; ansi_format([fg(red)], 'Nie ma tu przeciwników.~n', []), !
     )
-    % ; write("Nie masz broni!"), nl,!.
-    ; ansi_format([fg(red)], 'Nie masz broni!.~n', []), !. 
+    ; ansi_format([fg(red)], 'Nie masz broni!.~n', []), !.
 
 uzyj(_) :-
     % write("Nie możesz tego tu użyć!"), nl.
@@ -255,7 +257,6 @@ finish :-
     assert(guards_at(docks)),
     retractall(time_left(_)),
     assert(time_left(5)),
-
     assert(holding(ponton)), assert(holding(bron)), assert(know(friend)), assert(know(blindspot)),assert(holding(ubrania)),
     assert(i_am_at(wall)).
 
