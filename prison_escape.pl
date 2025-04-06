@@ -10,18 +10,18 @@ lokacja(stolowka, 'Jesteś na więziennej stołówce.').
 
 akcja_uzycia(pamietnik) :-
     Do_ucieczki = [
-        'sztućce',
-        'płaszcze przeciwdeszczorwe',
+        'broń (ze skarpetki i mydła)',
         'drut (z odkurzacza)',
-        'broń (większy nóż z kuchni)',
-        'ubrania na zmiane',
-        'kontakt poza więzieniem',
-        'papier',
         'farba',
-        'włosy (obciąć własne)',
-        'sznurek (wyciąć z piżamy)',
+        'kontakt poza więzieniem',
         'materiał (wyciąć z piżamy)',
-        'śrubokręt'
+        'papier',
+        'płaszcze przeciwdeszczorwe',
+        'sztućce',
+        'sznurek (wyciąć z piżamy)',
+        'śrubokręt',
+        'ubrania na zmiane',
+        'włosy (obciąć własne)'
     ],
     write('Potrzebne do ucieczki:'), nl,
     forall(member(Tekst, Do_ucieczki),
@@ -33,6 +33,7 @@ akcja_uzycia(nozyczki) :-
 
 akcja_uzycia(nozyczki) :-
     pozycja_gracza(cela),
+    \+ ekwipunek(wlosy),
     assertz(ekwipunek(wlosy)),
     ansi_format([fg(green)], 'Obciąłeś włosy.~n', []), !.
 
@@ -40,6 +41,7 @@ daj(red, atlas) :-
     ekwipunek(atlas),
     retract(ekwipunek(atlas)),
     retractall(kwestia(red, _)),
+    assertz(ekwipunek(kontakt)),
     assertz(kwestia(red, 'Super, dzięki za atlas! Sprawę kontaktu możesz uznać za załatwioną.')).
 
 dialog(Postac, Tekst) :-
@@ -60,6 +62,16 @@ dialog_sad :-
     dialog('Sędzia', 'Panie Andrew Dufrasne, za pisanie brzydkiego kodu zostaje Pan skazany na dwa dożywocia w więzieniu o zaostrzonym rygorze!'),
     nl.
 
+ekwipunek :-
+    findall(Przedmiot, ekwipunek(Przedmiot), Lista),
+    ( Lista = [] ->
+        ansi_format([fg(blue)], 'Twój ekwipunek jest pusty.~n', [])
+    ;
+        ansi_format([fg(blue)], 'Masz przy sobie:~n', []),
+        forall(member(P, Lista), ansi_format([fg(blue)], '-~w~n', [P]))
+    ),
+    sprawdz_ucieczke.
+
 idz(Miejsce) :-
     lokacja(Miejsce, Opis),
     retractall(pozycja_gracza(_)),
@@ -74,6 +86,7 @@ instrukcje :-
     write('Dostępne komendy:'), nl,
     write('start.               -- rozpoczęcie gry.'), nl,
     write('daj(imie, przedmiot) -- daj przedmiot z ekwipunku innej postaci.'), nl,
+    write('ekwipunek            -- sprawdź czy masz już wszystko do ucieczki.'), nl,
     write('idz(miejsce)         -- przejdź do "miejsce".'), nl,
     write('instrukcje           -- wyświetl te komendy.'), nl,
     write('mapa                 -- wyświetl mapę więzienia.'), nl,
@@ -94,6 +107,15 @@ mapa :-
     write('stolowka             -- więzienna stołówka'), nl,
     nl.
 
+porozmawiaj(red) :-
+    \+ ekwipunek(kontakt),
+    \+ ekwipunek(atlas),
+    \+ przedmiot_w(atlas, biblioteka),
+    pozycja_gracza(Miejsce),
+    postac_w(red, Miejsce),
+    dialog_postaci(red),
+    assertz(przedmiot_w(atlas, biblioteka)).
+
 porozmawiaj(Rozmowca) :-
     pozycja_gracza(Miejsce),
     postac_w(Rozmowca, Miejsce),
@@ -101,6 +123,21 @@ porozmawiaj(Rozmowca) :-
 
 porozmawiaj(Rozmowca) :-
     ansi_format([fg(red)], 'Nie ma tu nikogo o imieniu "~w".~n', [Rozmowca]).
+
+potrzebne_do_ucieczki([
+    drut,
+    farba,
+    kontakt,
+    material,
+    mydlo,
+    papier,    
+    plaszcze,
+    srubokret,
+    sznurek,
+    sztucce,
+    ubrania,
+    wlosy
+]).
 
 rozejrzyj :-
     pozycja_gracza(Miejsce),
@@ -110,6 +147,14 @@ rozejrzyj :-
     % postacie
     findall(Postac, postac_w(Postac, Miejsce), Postacie),
     wypisz_postacie(Postacie).
+
+sprawdz_ucieczke :-
+    potrzebne_do_ucieczki(Wymagane),
+    ( forall(member(Rzecz, Wymagane), ekwipunek(Rzecz)) ->
+        ucieczka_z_wiezienia
+    ;
+        true
+    ).
 
 start :-
     instrukcje,
@@ -121,7 +166,7 @@ start :-
 
 start_przedmioty :-
     retractall(przedmiot_w(_, _)),
-    assertz(przedmiot_w(atlas, biblioteka)),
+    % assertz(przedmiot_w(atlas, biblioteka)),
     assertz(przedmiot_w(sztucce, stolowka)),
     assertz(przedmiot_w(ubrania, pralnia)),
     assertz(przedmiot_w(klej, biblioteka)),
@@ -129,10 +174,11 @@ start_przedmioty :-
     assertz(przedmiot_w(plaszcze, pralnia)),
     assertz(przedmiot_w(papier, biblioteka)),
     assertz(przedmiot_w(farba, spacerniak)),
-    assertz(przedmiot_w(nozyczki, biblioteka)),
+    % assertz(przedmiot_w(nozyczki, biblioteka)),
     % assertz(przedmiot_w(jablko, stolowka)),
     assertz(przedmiot_w(odkurzacz, pralnia)),
-    assertz(przedmiot_w(pizama, cela)).
+    assertz(przedmiot_w(pizama, cela)),
+    assertz(przedmiot_w(mydlo, cela)).
 
 start_postacie :-
     retractall(postac_w(_, _)),
@@ -148,6 +194,10 @@ start_rozmowy :-
     assertz(kwestia('klawisz', 'Nie masz dziś zmiany w pralni? Lepiej się pośpiesz!')),
     assertz(kwestia('kucharz', 'To co zwykle?')).
 
+ucieczka_z_wiezienia :-
+    nl,
+    write('Masz wszystko czego potrzeba do ucieczki, pora poukrywać przedmioty po celi, żeby nie wzbudzały podejrzeń, poczekać na noc i rozpocząć ucieczkę.'), nl.
+
 uzyj(Przedmiot) :-
     ekwipunek(Przedmiot),
     akcja_uzycia(Przedmiot), !.
@@ -157,6 +207,7 @@ uzyj(Przedmiot) :-
 
 wez(plaszcze) :-
     pozycja_gracza(pralnia),
+    \+ przedmiot_w(jablko, stolowka),
     \+ ekwipunek(jablko),
     ansi_format([fg(red)], 'Klawisz patrzy! Musisz go czymś zająć, może jedzeniem?~n', []), !,
     assertz(przedmiot_w(jablko, stolowka)).
@@ -164,13 +215,19 @@ wez(plaszcze) :-
 wez(plaszcze) :-
     pozycja_gracza(pralnia),
     ekwipunek(jablko),
+    \+ ekwipunek(plaszcze),
     retract(przedmiot_w(plaszcze, pralnia)),
     retract(ekwipunek(jablko)),
     assertz(ekwipunek(plaszcze)),
     ansi_format([fg(green)], 'Zająłeś klawisza jabłkiem i zabrałeś płaszcze.~n', []), !.
 
+wez(plaszcze) :-
+    przedmiot_w(jablko, stolowka),
+    ansi_format([fg(red)], 'Klawisz patrzy! Musisz go czymś zająć, może jedzeniem?~n', []), !.
+
 wez(pizama) :-
     pozycja_gracza(cela),
+    \+ przedmiot_w(nozyczki, biblioteka),
     \+ ekwipunek(nozyczki),
     ansi_format([fg(red)], 'Bezużyteczna piżama... chyba że znajdziesz coś czym wytnie się z niej sznurek i materiał.~n', []), !,
     assertz(przedmiot_w(nozyczki, biblioteka)).
@@ -179,9 +236,33 @@ wez(pizama) :-
     pozycja_gracza(cela),
     ekwipunek(nozyczki),
     retract(przedmiot_w(pizama, cela)),
+    \+ ekwipunek(sznurek),
     assertz(ekwipunek(sznurek)),
     assertz(ekwipunek(material)),
     ansi_format([fg(green)], 'Wyciąłeś z piżamy sznurek i materiał.~n', []), !.
+
+wez(pizama) :-
+    przedmiot_w(nozyczki, biblioteka),
+    ansi_format([fg(red)], 'Bezużyteczna piżama... chyba że znajdziesz coś czym wytnie się z niej sznurek i materiał.~n', []), !.
+
+wez(odkurzacz) :-
+    pozycja_gracza(pralnia),
+    \+ przedmiot_w(srubokret, spacerniak),
+    \+ ekwipunek(srubokret),
+    assertz(przedmiot_w(srubokret, spacerniak)),
+    ansi_format([fg(red)], 'Odkurzacz. Przydałoby się jakoś go rozkręcić, żeby dostać się do wnętrzności...~n', []), !.
+    
+wez(odkurzacz) :-
+    pozycja_gracza(pralnia),
+    ekwipunek(srubokret),
+    \+ ekwipunek(drut),
+    assertz(ekwipunek(drut)),
+    retract(przedmiot_w(odkurzacz, pralnia)),
+    ansi_format([fg(green)], 'Rozkręciłeś odkurzacz i wyjąłeś z niego drut.~n', []), !.
+
+wez(odkurzacz) :-
+    przedmiot_w(srubokret, spacerniak),
+    ansi_format([fg(green)], 'Znajdź coś do rozkręcenia odkurzacza.~n', []), !.
 
 wez(Przedmiot) :-
     pozycja_gracza(Miejsce),
@@ -202,5 +283,3 @@ wypisz_przedmioty([]) :-
 wypisz_przedmioty(Przedmioty) :-
     ansi_format([fg(magenta)], 'Widzisz:~n', []),
     forall(member(P, Przedmioty), ansi_format([fg(magenta)], '-~w~n', [P])).
-
-% sznurek, drut, materiał
