@@ -3,8 +3,8 @@
 :- retractall(at(_, _)), retractall(i_am_at(_)), retractall(alive(_)), retractall(fence_can_cross), retractall(warned(_)), retractall(guards_at(_)), retractall(can_go_on_water).
 :- assert(guards_at(docks)).
 /* carry ober from prev stages */
-/* float, weapon, clothes, know(friend) from outside*/
- :- assert(holding(float)), assert(holding(weapon)), assert(know(friend)), assert(know(blindspot)).
+/* ponton, bron, clothes, know(friend) from outside*/
+ :- assert(holding(ponton)), assert(holding(bron)), assert(know(friend)), assert(know(blindspot)).
 /* :- retractall(holding(_)), retractall(know(_)). */
 
 /* map out area */
@@ -41,17 +41,17 @@ path(city, bus, bus_ending).
 /* npc_at(npc, place) */
 
 /* COMMANDS */
-/* These rules define the direction letters as calls to go/1. */
+/* These rules define the direction letters as calls to idź/1. */
 
-n :- go(n).
+n :- idź(n).
 
-s :- go(s).
+s :- idź(s).
 
-e :- go(e).
+e :- idź(e).
 
-w :- go(w).
+w :- idź(w).
 
-go(Direction) :-
+idź(Direction) :-
         i_am_at(Here),
         path(Here, Direction, There),
         (
@@ -65,21 +65,21 @@ go(Direction) :-
                         can_go_on_water
                         -> retract(i_am_at(Here)),
                         assert(i_am_at(There)),
-                        look,!
+                        rozejrzyj,!
                         ; write("Nie masz na czym płynąć"), nl, !
                 )
                 ; retract(i_am_at(Here)),
                 assert(i_am_at(There)),
-                look,!
+                rozejrzyj,!
         )
         ).
 
-go(_) :-
+idź(_) :-
         write('Nie ma tam przejścia.').
 
-look :-
+rozejrzyj :-
         i_am_at(Place),
-        describe(Place),
+        opisz(Place),
         nl,
         notice_objects_at(Place),
         nl, !.
@@ -90,7 +90,7 @@ notice_objects_at(Place) :-
         fail.
 notice_objects_at(_).
 
-wait :-
+czekaj :-
         /* deduct time*/
         i_am_at(Place),
         wait_at(Place).
@@ -138,12 +138,12 @@ determine(fence, Direction) :-
 
 determine(docks) :-
         (
-                guards_at(someplace)
-                -> get_boat()
-                ; (     warned(docks)
+                guards_at(docks)
+                -> (     warned(docks)
                         -> die(docks)
                         ; warn_about(docks)
                 )
+                ; get_boat()
         ), !.
 
 
@@ -165,8 +165,8 @@ die(_) :-
         finish.
 
 
-use(float) :-
-        holding(float)
+uzyj(ponton) :-
+        holding(ponton)
         -> (
                 i_am_at(beach)
                 ->(
@@ -182,8 +182,8 @@ use(float) :-
         ),!
         ; write("Nie masz pontonu!"), nl,!.
 
-use(weapon) :-
-        holding(weapon)
+uzyj(bron) :-
+        holding(bron)
         -> (
                 i_am_at(docks)
                 ->(
@@ -201,7 +201,7 @@ use(weapon) :-
         )
         ; write("Nie masz broni!"), nl,!.
 
-use(_) :-
+uzyj(_) :-
         write("Nie możesz tego tu użyć"), nl.
 
 
@@ -210,33 +210,33 @@ finish :-
         write('Gra dobiegła końca, wypisz halt. by wyjść'),
         nl.
 
-/* This rule just writes out game instructions. */
+/* This rule just writes out game insktrukcje. */
 
-instructions :-
+insktrukcje :-
         nl,
         write('Enter commands using standard Prolog syntax.'), nl,
         write('Available commands are:'), nl,
         write('start.             -- aby zacząć grę.'), nl,
         write('n.  s.  e.  w.     -- aby pójść w danym kierunku.'), nl,
-        write('take(Object).      -- to pick up an object.'), nl,
-        write('drop(Object).      -- to put down an object.'), nl,
-        write("use(Object)        -- to use object from inventory."), nl,
-        write("wait.              -- aby zaczekać na korzystniejszy moment do działania"), nl,
-        write('look.              -- aby ponownie się rozejrzeć.'), nl,
-        write('instructions.      -- aby ponownie wyświetlić tą wiadomość.'), nl,
+        write('wez(Object).      -- to pick up an object.'), nl,
+        write('upusc(Object).      -- to put down an object.'), nl,
+        write("uzyj(Object)        -- to uzyj object from inventory."), nl,
+        write("czekaj.              -- aby zaczekać na korzystniejszy moment do działania"), nl,
+        write('rozejrzyj.              -- aby ponownie się rozejrzeć.'), nl,
+        write('insktrukcje.      -- aby ponownie wyświetlić tą wiadomość.'), nl,
         write('halt.              -- aby skończyć grę i wyjść.'), nl,
         nl.
 
-/* This rule prints out instructions and tells where you are. */
+/* This rule prints out insktrukcje and tells where you are. */
 
 start :-
-        instructions,
-        look.
+        insktrukcje,
+        rozejrzyj.
 
 /* ---- places descriptions ---- */
 
 /* wall - staring place of part 3*/
-describe(wall) :-
+opisz(wall) :-
         write("Po dłużącym się zejściu z radością witasz grunt pod stopami."), nl,
         write("Mimo, że mury więzienia już macie za sobą, do pokonania została jeszcze bariera z drutu kolczastego i wody zatoki san francisco."), nl, nl,
         write("Noc niedługo się skończy a wraz z nią twoja szansa na ucieczkę."), nl,
@@ -244,7 +244,7 @@ describe(wall) :-
         write("Na południe od ciebie znajduje się ogrodzenie z drutu."), nl.
 
 /* fence - first obstacle */
-describe(fence) :-
+opisz(fence) :-
         (fence_can_cross
         -> write("Nie masz po co wracać się za płot"), nl
         ; write("Przed tobą znajduje się bariera wykonana z drutu kolczastego otaczająca budynek więzienny."), nl,
@@ -263,22 +263,22 @@ describe(fence) :-
         write("Na południu znajduje sie plaża"), nl
         ).
 
-describe(beach) :-
+opisz(beach) :-
         write("Czarna tafla wody rozciąga się coraz szerzej przed twoimi oczami."), nl,
         write("Nocna cisza przerywana jest ciągłym szumem fal rozbijających się o brzeg."), nl,
         write("Pod twoimi stopami czujesz szorstkie wyboiste kamyki."), nl,
         write("Dotarłeś do plaży."), nl,nl,
         write("Kilka godzin jakie ci pozostało zmusza cię do wybrania jednej drogi."), nl, nl , !,
         (
-                (holding(float); holding(weapon))
+                (holding(ponton); holding(bron))
                 ->(
-                        holding(float)
+                        holding(ponton)
                         -> write("Masz przygotowany improwizowany ponton."), nl,
                         write("Wystarczy tylko go napompować i odpłynąć"), nl,nl,!
                         ; nl,!
                 ),
                 (
-                        holding(weapon)
+                        holding(bron)
                         -> write("W kieszeni nadal znajduje się twoja improwizowana broń."), nl,
                         write("Jeżeli masz trochę szczęścia może będziesz w stanie obezwładnic strażników przy dokach i ukraść motorówkę?"), nl,nl,!
                         ; nl,!
@@ -290,7 +290,7 @@ describe(beach) :-
         !.
 
 
-describe(docks) :-
+opisz(docks) :-
         write("Bardzo ostrożnymi ruchami, idziesz w stronę doku. Droga jest ciężka i długa."), nl,
         write("Każda minuta obłożona jest ryzykiem wykrycia, każdy krok musi być wyliczony tak aby nie wejść w snop światła reflektorów."), nl,
         write("Mimo tego, udaje ci się."), nl,nl,
@@ -302,7 +302,7 @@ describe(docks) :-
         write("Możesz poczekać na zmianę warty, przy odrobinie szczęścia ci dwoje postanowią zrobić sobie fajrant wcześniej."), nl, nl,
         write("Na południe - morze, na wschód - plaża"), nl.
 
-describe(sea) :-
+opisz(sea) :-
         write("Wypłynąłeś na otwartą wodę."), nl,
         write("Nie możesz uwierzyć swojemu szczęściu, serce łomocze ci z podniecenia."), nl,nl,
         write("Mimo, że opuszczasz już wyspę nie oznacza to jeszcze spokoju."),nl,
@@ -320,7 +320,7 @@ describe(sea) :-
         nl.
 
 
-describe(island) :-
+opisz(island) :-
         write("Płyniesz w stronę pobliskiej Angel island."), nl,
         write("Przeprawa wydaje się trwać znacznie dłużej niż powinna. Emocje szarpią twoimi nerwami."),nl,nl,
         write("Dopływasz do plaży wyspy."),nl,
@@ -330,7 +330,7 @@ describe(island) :-
         write("Wyciągasz ponton na brzeg. Wschodzące słońce pomaga ci szukać miejsca na kryjówkę."), nl,
         win.
 
-describe(shore):-
+opisz(shore):-
         write("Płyniesz w stronę zatoki Kirbiego."), nl,
         write("Przeprawa wydaje się trwać znacznie dłużej niż powinna. Emocje szarpią twoimi nerwami."),nl,nl,
         write("Dopływasz do brzegu"),nl,
@@ -357,7 +357,7 @@ describe(shore):-
                 )
         ).
 
-describe(city) :-
+opisz(city) :-
         write("Płyniesz w stronę świateł San francisco."),nl,
         write("Przeprawa wydaje się trwać znacznie dłużej niż powinna. Emocje szarpią twoimi nerwami."),nl,nl,
         write("Dopływasz do turystycznego molo niedaleko golden gate beach."),nl,
@@ -372,9 +372,9 @@ describe(city) :-
                 ; write("ale nadal masz na sobie więzienny pasiak, byle kto od razu cię rozpozna."), nl
         ),
         write("Zawsze można ukraść samochód."),nl,
-        write("go(bus) albo bo(car)"),!, nl.
+        write("idź(bus) albo bo(car)"),!, nl.
 
-describe(bus_ending) :-
+opisz(bus_ending) :-
         write("Czekasz na przystanku kilkanaście minut, aż przyjedzie autobus."), nl,
         write("Drzwi otwierają się, a za kierownica siedzi stary kruchy mężczyzna."), nl,
         write("Wydaje się zmęczony ..."),
@@ -389,7 +389,7 @@ describe(bus_ending) :-
         ).
 
 
-describe(car_ending) :-
+opisz(car_ending) :-
         write("Na pobliskim parkingu stoi kilka aut. Zbliżając się dostrzegasz w kilku z nich śpiących ludzi."), nl,
         write("Po otaczającej cię woni wnioskujesz, że są to imprezowicze."), nl,
         write("Próbujesz szczęścia z kilkoma samochodami, dopóki nie znajdujesz tego czego szukasz. Ktoś zapomniał zamknąć tylnych drzwi."), nl,
@@ -418,7 +418,7 @@ cross_fence(waited) :-
         assert(i_am_at(beach)),
         write("Wyczekujesz najdłuższego okna i wspinasz sie na płot."), nl,
         write("Po największym wysiłku od kilku dni spadasz na drugą stronę."), nl, nl,!,
-        look, !.
+        rozejrzyj, !.
 
 /* get in boat*/
 get_boat :-
@@ -426,7 +426,7 @@ get_boat :-
         write("Szybko odwiązujesz cumę i zaczynasz wiosłować. "), nl,nl,
         retract(i_am_at(docks)),
         assert(i_am_at(sea)), nl, !,
-        look.
+        rozejrzyj.
 
 /* win and lose */
 
