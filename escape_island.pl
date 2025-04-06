@@ -1,12 +1,11 @@
 /* dynamic states */
-:- dynamic i_am_at/1, at/2, holding/1, fence_can_cross/1, guards_at/1, warned/1, can_go_on_water/1, friend/1.
+:- dynamic i_am_at/1, at/2, holding/1, fence_can_cross/1, guards_at/1, warned/1, can_go_on_water/1, know/1.
 :- retractall(at(_, _)), retractall(i_am_at(_)), retractall(alive(_)), retractall(fence_can_cross), retractall(warned(_)), retractall(guards_at(_)), retractall(can_go_on_water).
 :- assert(guards_at(docks)).
 /* carry ober from prev stages */
-/* float, weapon, clothes, friend from outside*/
-/* :- assert(holding(float_device)), assert(holding(weapon)), assert(friend).*/
-
-:- retractall(holding(_)), retractall(friend).
+/* float, weapon, clothes, know(friend) from outside*/
+ :- assert(holding(float)), assert(holding(weapon)), assert(know(friend)).
+/* :- retractall(holding(_)), retractall(know(_)). */
 
 /* map out area */
 i_am_at(wall).
@@ -160,12 +159,12 @@ use(float) :-
                 i_am_at(beach)
                 ->(
                         can_go_on_water
-                        -> assert(can_go_on_water),
+                        ->  write("Ponton jest już napompowany!"), nl
+                        ; assert(can_go_on_water),
                         write("Po dłuższym czasie pompowania ponton nabrał kształtu."), nl,
                         write("Twój improwizowany majstersztyk czeka gotowy na dziewiczą podróż."),nl,
                         write("Masz tylko nadzieję, że zdoła unieść twój ciężar ... przynajmniej na tyle długo by resztę drogi pokonać wpław."), nl,
                         write("Na twoje szczęście morze jest dziś bardzo spokojne, żadna fala nie powinna pokrzyżować twoich planów."),!, nl,nl
-                        ; write("Ponton jest już napompowany!"), nl
                 )
                 ; write("Nie jest to dobre miejsce do napompowania pontonu"),!, nl
         ),!
@@ -255,9 +254,9 @@ describe(beach) :-
         write("Dotarłeś do plaży."), nl,nl,
         write("Kilka godzin jakie ci pozostało zmusza cię do wybrania jednej drogi."), nl, nl , !,
         (
-                (holding(float_device); holding(weapon))
+                (holding(float); holding(weapon))
                 ->(
-                        holding(float_device)
+                        holding(float)
                         -> write("Masz przygotowany improwizowany ponton."), nl,
                         write("Wystarczy tylko go napompować i odpłynąć"), nl,nl,!
                         ; nl,!
@@ -298,7 +297,7 @@ describe(sea) :-
         write("Na wschodzie znajduje się niezamieszkałą wyspa. Jest na niej kilka starych fortów w których mógłyś się schować na pewien czas."), nl,
         write("Na zachodzie jest nadbrzerze,"),
         (
-                friend
+                know(friend)
                 -> write(" twój przyjaciel obiecał że będzie tam czekać"), nl
                 ; write(" ale nikt tam na ciebie nie czeka, a na piechotę ciężko ci będzie gdzieś dojść.")
         ),
@@ -322,7 +321,7 @@ describe(shore):-
         write("Przed tobą widnieją stare fortyfikacje nadbrzeżne wyrastające ze stromej skarpy."),nl,
         write("Dziurawisz swój ponton i topisz go kilka metrów od brzegu. To powinno opóźnić pościg, na jakiś czas."),nl,
         (
-                friend
+                know(friend)
                 -> write("Niedaleko powinien czekać twój znajomy."),nl,
                 write("Jeśli rzeczywiście sie pojawił, nie powinieneś mieć dziś więcej trudności."), nl,
                 write("Zaoferował przetrzymanie cie kilka tygodni w bezpiecznym miejscu, ale dalej co?"), nl,
