@@ -148,7 +148,7 @@ poloz_manekina :-
         jestem_w(lozko),
         write('Nie masz manekina, żeby go położyć.'), nl, !.
 poloz_manekina :-
-        write('Manekina można położyć tylko łóżku.'), nl.
+        write('Manekina można położyć tylko na łóżku.'), nl.
 
 zrob_atrape_wentylacji :-
         mam(sznurek), mam(drut), mam(material),
@@ -166,7 +166,7 @@ poloz_atrape :-
     wentylacja_otwarta,
     retract(mam(atrapa_wentylacji)),
     assert(znajduje_sie(atrapa_wentylacji, wentylacja)),
-    write('Umieściłeś atrapę wentylacji. Wygląda całkiem realistycznie... wpisz "n", aby uciec.'), nl, !.
+    write('Założono atrapę wentylacji. Wygląda całkiem realistycznie... wpiścij  "n", aby uciec.'), nl, !.
 poloz_atrape :- jestem_w(wentylacja), \+ mam(atrapa_wentylacji), write('Nie masz atrapy przy sobie.'), nl, !.
 poloz_atrape :- jestem_w(wentylacja), \+ wentylacja_otwarta, write('Musisz najpierw rozwiercić prawdziwą wentylację.'), nl, !.
 poloz_atrape :- write('Musisz być przy wentylacji, aby umieścić atrapę.'), nl.
@@ -181,8 +181,8 @@ wierc :-
     (ilosc_uzyc_noza(3), ilosc_uzyc_lyzki(3) ->
         (wentylacja_otwarta -> true ; assert(wentylacja_otwarta)),
         write('Wentylacja została otwarta!'), nl
-    ; write('Wciąż wiercisz...'), nl), !.
-wierc :- write('Potrzebujesz noża lub łyżki i musisz być przy wentylacji.'), nl.
+    ; write('Wierć dalej...'), nl), !.
+wierc :- write('Potrzebujesz noża i łyżki, musisz być przy wentylacji.'), nl.
 
 odkrec :-
     jestem_w(Lokacja),
@@ -195,9 +195,9 @@ odkrec :-
     assert(sruby_kratki(Lokacja, Nowa)),
     (Nowa = 4 ->
         assert(kratka_usunieta(Lokacja)),
-        write('Odkręciłeś ostatnią śrubę. Kratka jest usunięta!'), nl
+        write('Odkręciłeś ostatnią śrubę. Kratka usunięta!'), nl
     ;
-        write('Odkręciłeś śrubę. Zostało: '), write(4 - Nowa), nl
+        write('Odkręciłeś śrubę. Pozostało: '), write(4 - Nowa), nl
     ), !.
 odkrec :- jestem_w(L), member(L, [szyb3, szyb6, szyb10]), \+ mam(srubokret), write('Potrzebujesz śrubokręta.'), nl, !.
 odkrec :- jestem_w(L), member(L, [szyb3, szyb6, szyb10]), kratka_usunieta(L), write('Kratka już jest usunięta.'), nl, !.
@@ -212,16 +212,16 @@ ekwipunek :- write('Na razie nic nie podniosłeś.'), nl.
 
 wyczysc_ekran :- write('\e[H\e[2J').
 
-opis(centrum_celi) :- write('Jesteś w centrum swojej celi. Zbierz ekwipunek do ucieczki.'), nl.
-opis(lozko) :- write('Strefa łóżkowa. Może znajdziesz tu coś, z czego zrobisz manekina?'), nl.
+opis(centrum_celi) :- write('Jesteś w centrum swojej celi. Skompletuj ekwipunek do ucieczki.'), nl.
+opis(lozko) :- write('łóżko. Może znajdziesz tu coś, z czego zrobisz manekina?'), nl.
 opis(toaleta) :- write('Jesteś przy toalecie. Widzisz śrubokręt.'), nl.
 opis(magazynek) :- write('Magazynek. Znajdziesz tu narzędzia.'), nl.
 opis(poludnie) :- write('Południowy zakątek. Są tu płaszcze przeciwdeszczowe i klej.'), nl.
-opis(wentylacja) :- write('Stoisz przy kratce wentylacyjnej. Możliwe wyjście?'), nl.
+opis(wentylacja) :- write('Stoisz przy kratce wentylacyjnej. Chyba tędy musisz uciec?'), nl.
 opis(zlew) :- write('Zlew. Jest tu sznurek, drut i kawałek materiału.'), nl.
 
 opis(szyb1) :- write('Wpełzasz do ciasnego kanału. Przed Tobą zakręt.'), nl.
-opis(szyb2) :- write('Bardzo ciasno. Możesz iść tylko naprzód.'), nl.
+opis(szyb2) :- write('Bardzo ciasno.'), nl.
 opis(szyb3) :- (kratka_usunieta(szyb3) -> write('Kratka wschodnia usunięta. Można przejść.'), nl ; write('Kratka blokuje drogę na wschód.'), nl).
 opis(szyb4) :- write('Kanał schodzi w dół.'), nl.
 opis(szyb5) :- write('Dalej w dół...'), nl.
