@@ -461,14 +461,14 @@ opisz(car_ending) :-
 % ostrzeżenia
 warn_about(fence) :-
     assert(warned(fence)),
-    ansi_format([fg(orange)],"Na pewno chcesz rzucić się przez płot tu i teraz? ", []),
-    ansi_format([fg(orange)],"Najpewniej ci się nie uda bez wcześniejszego przygotowania.~n", []),
+    ansi_format([fg(yellow)],"Na pewno chcesz rzucić się przez płot tu i teraz? ", []),
+    ansi_format([fg(yellow)],"Najpewniej ci się nie uda bez wcześniejszego przygotowania.~n", []),
     nl,
     fail.
 
 warn_about(docks) :-
     assert(warned(docks)),
-    ansi_format([fg(orange)],"Na pewno chcesz pójść do łodzi mimo obecności strażników?~n", []).
+    ansi_format([fg(yellow)],"Na pewno chcesz pójść do łodzi mimo obecności strażników?~n", []).
 
 warn_about(_).
 
