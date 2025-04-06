@@ -1,10 +1,10 @@
 /* dynamic states */
-:- dynamic i_am_at/1, at/2, holding/1, fence_can_cross/1, guards_at/1, warned/1, can_go_on_water/1.
+:- dynamic i_am_at/1, at/2, holding/1, fence_can_cross/1, guards_at/1, warned/1, can_go_on_water/1, friend/1.
 :- retractall(at(_, _)), retractall(i_am_at(_)), retractall(alive(_)), retractall(fence_can_cross), retractall(warned(_)), retractall(guards_at(_)), retractall(can_go_on_water).
 :- assert(guards_at(docks)).
 /* carry ober from prev stages */
 /* float, weapon, clothes, friend from outside*/
-:- assert(holding(float_device)), assert(holding(weapon)).
+:- assert(holding(float_device)), assert(holding(weapon)), assert(friend).
 /*retractall(holding(_))*/
 
 /* map out area */
@@ -21,10 +21,10 @@ path(beach, s, sea).
 path(beach, w, docks).
 
 path(docks, e, beach).
-path(docks, w, sea).
+path(docks, s, sea).
 
 path(sea, s, city).
-path(sea, n, island).
+path(sea, e, island).
 path(sea, w, shore).
 
 path(city, car, car_ending).
@@ -160,9 +160,9 @@ use(float) :-
                 write("Po dłuższym czasie pompowania ponton nabrał kształtu."), nl,
                 write("Twój improwizowany majstersztyk czeka gotowy na dziewiczą podróż."),nl,
                 write("Masz tylko nadzieję, że zdoła unieść twój ciężar ... przynajmniej na tyle długo by resztę drogi pokonać wpław."), nl,
-                write("Na twoje szczęście morze jest dziś bardzo spokojne, żadna fala nie powinna pokrzyżować twoich planów."), nl,nl
-                ; write("Nie jest to dobre miejsce do napompowania pontonu"), nl
-        ).
+                write("Na twoje szczęście morze jest dziś bardzo spokojne, żadna fala nie powinna pokrzyżować twoich planów."),!, nl,nl
+                ; write("Nie jest to dobre miejsce do napompowania pontonu"),!, nl
+        ),!.
 
 use(_) :-
         write("Nie możesz tego tu użyć"), nl.
@@ -259,7 +259,7 @@ describe(docks) :-
         write("To daje ci okazję."), nl,
         write("Możesz spróbować ukraść łódź, ale nieważne jak szybko to zrobisz i tak zostaniesz zauważony tak długo jak strażnicy tu stoją."), nl,
         write("Możesz poczekać na zmianę warty, przy odrobinie szczęścia ci dwoje postanowią zrobić sobie fajrant wcześniej."), nl, nl,
-        write("Na zachód - morze, na wschód - plaża"), nl.
+        write("Na południe - morze, na wschód - plaża"), nl.
 
 describe(sea) :-
         write("Wypłynąłeś na otwartą wodę."), nl,
@@ -269,7 +269,7 @@ describe(sea) :-
         write("Wtedy gliny bardzo szybko zrobią z tobą porządek."), nl,
         write("Twoja ucieczka prawie dobiegła końca. Została tylko kwesta gdzie popłynąć..."),nl,nl,
         write("Na południu rozciągają się doki i plaże San Francisco, może uda ci się wtopić w tłum jeśli masz cywilne ubrania"), nl,
-        write("Na północy znajduja się niezamieszkałą wyspa. Jest na niej kilka starych fortów w których mógłyś się schować na pewien czas."), nl,
+        write("Na wschodzie znajduje się niezamieszkałą wyspa. Jest na niej kilka starych fortów w których mógłyś się schować na pewien czas."), nl,
         write("Na zachodzie jest nadbrzerze,"),
         (
                 friend
