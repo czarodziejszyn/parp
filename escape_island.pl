@@ -1,9 +1,12 @@
 /* dynamic states */
-:- dynamic i_am_at/1, at/2, holding/1, fence_can_cross/1, guards_at/1, warned/1, can_go_on_water/1, know/1.
+:- dynamic i_am_at/1, at/2, holding/1, fence_can_cross/1, guards_at/1, warned/1, can_go_on_water/1, know/1, time_left/1.
 :- retractall(at(_, _)), retractall(i_am_at(_)), retractall(alive(_)), retractall(fence_can_cross), retractall(warned(_)), retractall(guards_at(_)), retractall(can_go_on_water).
 :- assert(guards_at(docks)).
-/* carry ober from prev stages */
-/* ponton, bron, clothes, know(friend) from outside*/
+:- retractall(time_left(_)).
+:- assert(time_left(5)).
+/* ------ carry over from prev stages ------- */
+/* ponton, bron, ubranie, know(friend), know(blindspot)*/
+
  :- assert(holding(ponton)), assert(holding(bron)), assert(know(friend)), assert(know(blindspot)).
 /* :- retractall(holding(_)), retractall(know(_)). */
 
@@ -65,6 +68,7 @@ idź(Direction) :-
                         can_go_on_water
                         -> retract(i_am_at(Here)),
                         assert(i_am_at(There)),
+                        deduct_time(1),
                         rozejrzyj,!
                         ; write("Nie masz na czym płynąć"), nl, !
                 )
@@ -82,6 +86,7 @@ rozejrzyj :-
         opisz(Place),
         nl,
         notice_objects_at(Place),
+        sprawdz_czas,
         nl, !.
 
 notice_objects_at(Place) :-
@@ -91,28 +96,34 @@ notice_objects_at(Place) :-
 notice_objects_at(_).
 
 czekaj :-
-        /* deduct time*/
+        deduct_time(1),
         i_am_at(Place),
         wait_at(Place).
 
 wait_at(fence) :-
+        /* second deduct time is on pupouse */
+        deduct_time(1),
         fence_can_cross
         -> fail
         ; assert(fence_can_cross),
         write("Czekasz i obserwujesz sposób poruszania się świateł."),nl,
         write("Po kilku cyklach jesteś pewien swojej oceny."), nl,
-        write("Masz okazję do przekroczenia ogrodzenia."),!, nl.
+        write("Masz okazję do przekroczenia ogrodzenia."),!, nl,
+        sprawdz_czas.
 
 wait_at(docks) :-
+        deduct_time(1),
         retract(guards_at(docks)),
         assert(guards_at(someplace)),
         write("Usiadłeś w miejscu którego nie skanują reflektory i czekasz."), nl,
         write("Po dłuższej chwili jeden ze strażników zaczyna głośno narzekać, że na tym posterunku nic się nigdy nie dzieje."), nl,
         write("Przysłuchujesz się rozmowie i z radością przyjmujesz ich decyzję o skoczeniu po karty."), nl, nl,
-        write("Strażnicy odchodzą, masz okazję do działania"), !, nl.
+        write("Strażnicy odchodzą, masz okazję do działania"), !, nl,
+        sprawdz_czas.
 
 wait_at(_) :-
-        write("zmarnowałeś nieco czasu"),nl.
+        write("zmarnowałeś nieco czasu"),nl,
+        sprawdz_czas.
 
 
 determine(fence, Direction) :-
@@ -130,9 +141,8 @@ determine(fence, Direction) :-
                 know(blindspot)
                 -> retract(i_am_at(fence)),
                 assert(i_am_at(blindspot)),
-                write("Ostrożnie poruszasz się przy murze więzienia dopóki nie znajdziesz się w okolicy o której słyszałeś."),nl,
-                write("Rzeczywiście, reflektory omijają to miejsce! "), nl,
-                write("Spokojnie możesz tu przekroczyć płot i udać się na południe, na plażę.")
+                deduct_time(1),
+                rozejrzyj
                 ;write('Nie ma tam przejścia.')
         ).
 
@@ -173,10 +183,12 @@ uzyj(ponton) :-
                         can_go_on_water
                         ->  write("Ponton jest już napompowany!"), nl
                         ; assert(can_go_on_water),
+                        deduct_time(2),
                         write("Po dłuższym czasie pompowania ponton nabrał kształtu."), nl,
                         write("Twój improwizowany majstersztyk czeka gotowy na dziewiczą podróż."),nl,
                         write("Masz tylko nadzieję, że zdoła unieść twój ciężar ... przynajmniej na tyle długo by resztę drogi pokonać wpław."), nl,
-                        write("Na twoje szczęście morze jest dziś bardzo spokojne, żadna fala nie powinna pokrzyżować twoich planów."),!, nl,nl
+                        write("Na twoje szczęście morze jest dziś bardzo spokojne, żadna fala nie powinna pokrzyżować twoich planów."),!, nl,nl,
+                        sprawdz_czas
                 )
                 ; write("Nie jest to dobre miejsce do napompowania pontonu"),!, nl
         ),!
@@ -203,6 +215,38 @@ uzyj(bron) :-
 
 uzyj(_) :-
         write("Nie możesz tego tu użyć"), nl.
+
+deduct_time(1) :-
+        time_left(Past),
+        retract(time_left(Past)),
+        Now is Past - 1,
+        assert(time_left(Now)).
+deduct_time(2) :-
+        time_left(Past),
+        retract(time_left(Past)),
+        Now is Past - 1,
+        assert(time_left(Now)).
+
+sprawdz_czas :-
+        time_left(Hours),
+        (
+                Hours = 0
+                -> write("Słońce wyłoniło się już w pełni nad horyzont. Wiesz, że o tej porze w więzieniu jest pobudka."), nl,
+                write("Z gmachu więzienia wydobywa się wycie syren. Wiedzą o twojej uciecze i mają cię jak na dłoni..."), nl,
+                write("Przynajmniej spróbowałeś ..."), nl,
+                die(czas)
+                ; (
+                        Hours = 5
+                        -> write("Zostało ci "), write(Hours), write(" godzin"),nl,!
+                        ; (
+                                Hours = 1
+                                -> write("Horyzont zaczyna odmieniać niewyraźna łuna światła."), nl,
+                                write("Za niespełna godzinę straznicy odkryją twoją ucieczkę, ale ty będziesz wtedy już daleko ... racja?"), nl, nl,
+                                write("Została ci jedna godzina"), nl,!
+                                ; write("Zostały ci "), write(Hours), write(" godziny"), nl,!
+                        )
+                )
+        ).
 
 
 finish :-
@@ -262,6 +306,11 @@ opisz(fence) :-
         ),
         write("Na południu znajduje sie plaża"), nl
         ).
+
+opisz(blindspot) :-
+        write("Ostrożnie poruszasz się przy murze więzienia dopóki nie znajdziesz się w okolicy o której słyszałeś."),nl,
+        write("Rzeczywiście, reflektory omijają to miejsce! "), nl,
+        write("Spokojnie możesz tu przekroczyć płot i udać się na południe, na plażę.").
 
 opisz(beach) :-
         write("Czarna tafla wody rozciąga się coraz szerzej przed twoimi oczami."), nl,
@@ -347,7 +396,7 @@ opisz(shore):-
                 ; write("Kierujesz sie w stronę skarpy. Nie wiesz co dalej ze sobą zrobić."), nl,
                 write("Idziesz po odsłoniętym stoku na kilka godzin zanim zjawi się tu tłum turystów z całego kraju."), nl,
                 (
-                        holding(clothes)
+                        holding(ubranie)
                         -> write("Przynajmniej masz szansę wtopić się w tłum na jakiś czas."),nl,
                         write("Próbujesz odprężyć się zanim ktoś cię zobaczy. Zostaje ci jedynie iść naprzód."),nl,
                         win
@@ -367,7 +416,7 @@ opisz(city) :-
         write("Gdzieś niedaleko musi znajdowac się jakiś przystanek autobusowy."), nl,
         write("Możesz wsiąść do byle jakiego i pojechać najdalej jak to możliwe."), nl,
         (
-                holding(clothes)
+                holding(ubranie)
                 -> write("Masz na sobie cywilne ubrania więc nik nie powinien cię natychmiast rozpoznać."), nl
                 ; write("ale nadal masz na sobie więzienny pasiak, byle kto od razu cię rozpozna."), nl
         ),
@@ -379,7 +428,7 @@ opisz(bus_ending) :-
         write("Drzwi otwierają się, a za kierownica siedzi stary kruchy mężczyzna."), nl,
         write("Wydaje się zmęczony ..."),
         (
-                holding(clothes)
+                holding(ubranie)
                 -> write("dzięki czemu nie zauważa, że nie kupujesz biletu."), nl,
                 write("Widocznie uznał, że masz czasowy... albo nie chce się awanturować."), nl,nl,
                 win
