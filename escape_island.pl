@@ -235,7 +235,7 @@ sprawdz_czas :-
                                 Hours = 1
                                 -> write("Horyzont zaczyna odmieniać niewyraźna łuna światła."), nl,
                                 write("Za niespełna godzinę straznicy odkryją twoją ucieczkę, ale ty będziesz wtedy już daleko ... racja?"), nl, nl,
-                                write("Została ci jedna godzina"), nl,!
+                                ansi_format([fg(red)],"Została ci jedna godzina", []), nl,!
                                 ; ansi_format([fg(red)], "Zostały ci ", []), ansi_format([fg(red)], Hours, []), ansi_format([fg(red)]," godziny", []), nl,!
                         )
                 )
