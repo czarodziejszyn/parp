@@ -1,3 +1,4 @@
+:- use_module(library(ansi_term)).
 /* dynamic states */
 :- dynamic i_am_at/1, at/2, holding/1, fence_can_cross/1, guards_at/1, warned/1, can_go_on_water/1, know/1, time_left/1.
 :- retractall(at(_, _)), retractall(i_am_at(_)), retractall(alive(_)), retractall(fence_can_cross), retractall(warned(_)), retractall(guards_at(_)), retractall(can_go_on_water).
@@ -7,7 +8,7 @@
 /* ------ carry over from prev stages ------- */
 /* ponton, bron, ubranie, know(friend), know(blindspot)*/
 
- :- assert(holding(ponton)), assert(holding(bron)), assert(know(friend)), assert(know(blindspot)), holding(ubrania).
+:- assert(holding(ponton)), assert(holding(bron)), assert(know(friend)), assert(know(blindspot)), assert(holding(ubrania)).
 /* :- retractall(holding(_)), retractall(know(_)). */
 
 /* map out area */
@@ -90,7 +91,7 @@ notice_objects_at(_).
 czekaj :-
         deduct_time(1),
         i_am_at(Place),
-        wait_at(Place).
+        wait_at(Place), !.
 
 wait_at(fence) :-
         /* second deduct time is on purpose */
@@ -115,7 +116,7 @@ wait_at(docks) :-
 
 wait_at(_) :-
         write("zmarnowałeś nieco czasu"),nl,
-        sprawdz_czas.
+        sprawdz_czas,!.
 
 
 determine(fence, Direction) :-
@@ -223,13 +224,13 @@ sprawdz_czas :-
         time_left(Hours),
         (
                 Hours = 0
-                -> write("Słońce wyłoniło się już w pełni nad horyzont. Wiesz, że o tej porze w więzieniu jest pobudka."), nl,
-                write("Z gmachu więzienia wydobywa się wycie syren. Wiedzą o twojej uciecze i mają cię jak na dłoni..."), nl,
-                write("Przynajmniej spróbowałeś ..."), nl,
+                -> ansi_format([fg(red)], "Słońce wyłoniło się już w pełni nad horyzont. Wiesz, że o tej porze w więzieniu jest pobudka.", []), nl,
+                ansi_format([fg(red)], "Z gmachu więzienia wydobywa się wycie syren. Wiedzą o twojej uciecze i mają cię jak na dłoni...", []), nl,
+                ansi_format([fg(red)], "Przynajmniej spróbowałeś ...", []), nl,
                 die(czas)
                 ; (
                         Hours = 5
-                        -> write("Zostało ci "), write(Hours), write(" godzin"),nl,!
+                        -> ansi_format([fg(red)], "Zostało ci ", []), write(Hours), write(" godzin"),nl,!
                         ; (
                                 Hours = 1
                                 -> write("Horyzont zaczyna odmieniać niewyraźna łuna światła."), nl,
@@ -242,8 +243,6 @@ sprawdz_czas :-
 
 
 finish :-
-        /* dynamic states */
-        dynamic i_am_at/1, at/2, holding/1, fence_can_cross/1, guards_at/1, warned/1, can_go_on_water/1, know/1, time_left/1,
         retractall(at(_, _)), retractall(i_am_at(_)), retractall(alive(_)), retractall(fence_can_cross), retractall(warned(_)), retractall(guards_at(_)), retractall(can_go_on_water),
         assert(guards_at(docks)),
         retractall(time_left(_)),
@@ -280,8 +279,6 @@ instrukcje :-
 /* This rule prints out instrukcje and tells where you are. */
 
 start :-
-        /* dynamic states */
-        dynamic i_am_at/1, at/2, holding/1, fence_can_cross/1, guards_at/1, warned/1, can_go_on_water/1, know/1, time_left/1,
         retractall(at(_, _)), retractall(i_am_at(_)), retractall(alive(_)), retractall(fence_can_cross), retractall(warned(_)), retractall(guards_at(_)), retractall(can_go_on_water),
         assert(guards_at(docks)),
         retractall(time_left(_)),
