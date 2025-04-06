@@ -250,6 +250,20 @@ sprawdz_czas :-
 
 
 finish :-
+        /* dynamic states */
+        dynamic i_am_at/1, at/2, holding/1, fence_can_cross/1, guards_at/1, warned/1, can_go_on_water/1, know/1, time_left/1,
+        retractall(at(_, _)), retractall(i_am_at(_)), retractall(alive(_)), retractall(fence_can_cross), retractall(warned(_)), retractall(guards_at(_)), retractall(can_go_on_water),
+        assert(guards_at(docks)),
+        retractall(time_left(_)),
+        assert(time_left(5)),
+        /* ------ carry over from prev stages ------- */
+        /* ponton, bron, ubranie, know(friend), know(blindspot)*/
+
+        assert(holding(ponton)), assert(holding(bron)), assert(know(friend)), assert(know(blindspot)),
+        /* :- retractall(holding(_)), retractall(know(_)). */
+
+        /* map out area */
+        i_am_at(wall),
         nl,
         write('Gra dobiegła końca, wypisz halt. by wyjść'),
         nl.
@@ -274,6 +288,20 @@ instrukcje :-
 /* This rule prints out instrukcje and tells where you are. */
 
 start :-
+        /* dynamic states */
+        dynamic i_am_at/1, at/2, holding/1, fence_can_cross/1, guards_at/1, warned/1, can_go_on_water/1, know/1, time_left/1,
+        retractall(at(_, _)), retractall(i_am_at(_)), retractall(alive(_)), retractall(fence_can_cross), retractall(warned(_)), retractall(guards_at(_)), retractall(can_go_on_water),
+        assert(guards_at(docks)),
+        retractall(time_left(_)),
+        assert(time_left(5)),
+        /* ------ carry over from prev stages ------- */
+        /* ponton, bron, ubranie, know(friend), know(blindspot)*/
+
+        assert(holding(ponton)), assert(holding(bron)), assert(know(friend)), assert(know(blindspot)),
+        /* :- retractall(holding(_)), retractall(know(_)). */
+
+        /* map out area */
+        i_am_at(wall),
         instrukcje,
         rozejrzyj.
 
