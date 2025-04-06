@@ -58,24 +58,24 @@ idź(Direction) :-
         i_am_at(Here),
         path(Here, Direction, There),
         (
-        i_am_at(fence)
-        -> determine(fence, Direction),!
-        ; i_am_at(docks)
-        -> determine(docks), !
-        ; (
-                There = sea
-                -> (
-                        can_go_on_water
-                        -> retract(i_am_at(Here)),
+                i_am_at(fence)
+                -> determine(fence, Direction),!
+                ; i_am_at(docks)
+                -> determine(docks), !
+                ; (
+                        There = sea
+                        -> (
+                                can_go_on_water
+                                -> retract(i_am_at(Here)),
+                                assert(i_am_at(There)),
+                                deduct_time(1),
+                                rozejrzyj,!
+                                ; write("Nie masz na czym płynąć"), nl, !
+                        )
+                        ; retract(i_am_at(Here)),
                         assert(i_am_at(There)),
-                        deduct_time(1),
                         rozejrzyj,!
-                        ; write("Nie masz na czym płynąć"), nl, !
                 )
-                ; retract(i_am_at(Here)),
-                assert(i_am_at(There)),
-                rozejrzyj,!
-        )
         ).
 
 idź(_) :-
@@ -475,6 +475,7 @@ get_boat :-
         write("Szybko odwiązujesz cumę i zaczynasz wiosłować. "), nl,nl,
         retract(i_am_at(docks)),
         assert(i_am_at(sea)), nl, !,
+        deduct_time(1),
         rozejrzyj.
 
 /* win and lose */
