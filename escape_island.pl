@@ -254,9 +254,9 @@ finish :-
         write('Gra dobiegła końca, wypisz halt. by wyjść'),
         nl.
 
-/* This rule just writes out game insktrukcje. */
+/* This rule just writes out game instrukcje. */
 
-insktrukcje :-
+instrukcje :-
         nl,
         write('Enter commands using standard Prolog syntax.'), nl,
         write('Available commands are:'), nl,
@@ -271,10 +271,10 @@ insktrukcje :-
         write('halt.                    -- aby skończyć grę i wyjść.'), nl,
         nl.
 
-/* This rule prints out insktrukcje and tells where you are. */
+/* This rule prints out instrukcje and tells where you are. */
 
 start :-
-        insktrukcje,
+        instrukcje,
         rozejrzyj.
 
 /* ---- places descriptions ---- */
@@ -282,7 +282,7 @@ start :-
 /* wall - staring place of part 3*/
 opisz(wall) :-
         write("Po dłużącym się zejściu z radością witasz grunt pod stopami."), nl,
-        write("Mimo, że mury więzienia już macie za sobą, do pokonania została jeszcze bariera z drutu kolczastego i wody zatoki san francisco."), nl, nl,
+        write("Mimo, że mury więzienia już macie za sobą, do pokonania została jeszcze bariera z drutu kolczastego i wody zatoki San Francisco."), nl, nl,
         write("Noc niedługo się skończy a wraz z nią twoja szansa na ucieczkę."), nl,
         write("Wiesz, że nie masz za dużo czasu"), nl, nl,
         write("Na południe od ciebie znajduje się ogrodzenie z drutu."), nl.
@@ -359,8 +359,8 @@ opisz(sea) :-
         write("Wtedy gliny bardzo szybko zrobią z tobą porządek."), nl,
         write("Twoja ucieczka prawie dobiegła końca. Została tylko kwesta gdzie popłynąć..."),nl,nl,
         write("Na południu rozciągają się doki i plaże San Francisco, może uda ci się wtopić w tłum jeśli masz cywilne ubrania"), nl,
-        write("Na wschodzie znajduje się niezamieszkałą wyspa. Jest na niej kilka starych fortów w których mógłyś się schować na pewien czas."), nl,
-        write("Na zachodzie jest nadbrzerze,"),
+        write("Na wschodzie znajduje się niezamieszkałą wyspa. Jest na niej kilka starych fortów w których mógłbyś się schować na pewien czas."), nl,
+        write("Na zachodzie jest nadbrzeze,"),
         (
                 know(friend)
                 -> write(" twój przyjaciel obiecał że będzie tam czekać"), nl
