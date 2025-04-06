@@ -362,13 +362,11 @@ opisz(docks) :-
         write("Dookoła molo kręci się para strażników. Na twoje szczęście, nikt się ciebie tu nie spodziewa."), nl,
         write("To daje ci okazję."), nl,
         write("Możesz spróbować ukraść łódź, ale nieważne jak szybko to zrobisz i tak zostaniesz zauważony tak długo jak strażnicy tu stoją."), nl,
-        ansi_format([fg(cyan)],"Możesz poczekać na zmianę warty, przy odrobinie szczęścia ci dwoje postanowią zrobić sobie fajrant wcześniej." []), nl, nl,
+        ansi_format([fg(cyan)],"Możesz poczekać na zmianę warty, przy odrobinie szczęścia ci dwoje postanowią zrobić sobie fajrant wcześniej.", []), nl, nl,
         (
                 holding(bron)
                 -> ansi_format([fg(cyan)], "Masz też swoją broń. Może w końcu jest szansa jej użyć...", [])
-                ;
-
-        )
+        ),
         write("Na południe - morze, na wschód - plaża"), nl.
 
 opisz(sea) :-
