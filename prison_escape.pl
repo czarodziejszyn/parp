@@ -133,18 +133,18 @@ porozmawiaj(Rozmowca) :-
     ansi_format([fg(red)], 'Nie ma tu nikogo o imieniu "~w".~n', [Rozmowca]), !.
 
 potrzebne_do_ucieczki([
-    % drut,
-    % farba,
-    % kontakt,
-    % material,
-    % mydlo,
-    % papier,    
-    % plaszcze,
-    % srubokret,
-    % sznurek,
-    % sztucce,
-    % ubrania,
-    % wlosy
+    drut,
+    farba,
+    kontakt,
+    material,
+    mydlo,
+    papier,    
+    plaszcze,
+    srubokret,
+    sznurek,
+    sztucce,
+    ubrania,
+    wlosy
 ]).
 
 rozejrzyj :-
