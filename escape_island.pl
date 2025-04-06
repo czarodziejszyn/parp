@@ -154,17 +154,17 @@ die(fence) :-
         write("Rzucasz się na ogrodzenie ja tylko reflektor się od niego odsuwa."), nl,
         write("Niestety źle wybrałeś chwilę i zanim wespniesz się na połowę wysokości otacza cię snop światła."), nl,
         write("Słyszysz syreny alarmowe..."), nl,
-        write("Umierasz, koniec gry"), nl,
+        ansi_format([fg(red)],"Umierasz, koniec gry", []), nl,
         finish.
 
 die(docks) :-
         write("Udaje ci się zakraść niedaleko jednego ze strażników. Jednak gdy jesteś na wyciągnięcie ręki jeden z nich obraca się w twoją stronę."), nl,
         write("Rzucasz się w stronę łodzi w ostatnim akcie desperacji. Skaczesz i wpadasz do niej z impetem ale z pomostu słyszysz 'wyłaź! na ziemię! podnoś ręce!'."), nl,nl,
-        write("Umierasz, koniec gry"), nl,!,
+        ansi_format([fg(red)],"Umierasz, koniec gry, []"), nl,!,
         finish.
 
 die(_) :-
-        write("Umierasz, koniec gry"), nl,
+        ansi_format([fg(red)],"Umierasz, koniec gry", []), nl,
         finish.
 
 
@@ -299,7 +299,7 @@ opisz(wall) :-
         write("Mimo, że mury więzienia już macie za sobą, do pokonania została jeszcze bariera z drutu kolczastego i wody zatoki San Francisco."), nl, nl,
         write("Noc niedługo się skończy a wraz z nią twoja szansa na ucieczkę."), nl,
         write("Wiesz, że nie masz za dużo czasu"), nl, nl,
-        write("Na południe od ciebie znajduje się ogrodzenie z drutu."), nl.
+        ansi_format([fg(cyan)],"Na południe od ciebie znajduje się ogrodzenie z drutu.", []), nl.
 
 /* fence - first obstacle */
 opisz(fence) :-
@@ -310,12 +310,12 @@ opisz(fence) :-
         write("Sam drut byłby dość nieprzyjemną przeszkodą ale wizja dostania kulką powoduje konieczność przemyślanego podejścia do problemu."), nl, nl,
         write("Ale najpierw musisz przedostać się przez płot."), nl, nl,
         write("Reflektory obracają się w stałym tempie. Ich droga jest przewidywalna."), nl,
-        write("Jeśli spędzisz trochę czasu, znajdziesz moment kiedy nikt nie patrzy na tak kawałek płotu dość długo by się przeprawić."), nl,
+        ansi_format([fg(cyan)],"Jeśli spędzisz trochę czasu, znajdziesz moment kiedy nikt nie patrzy na tak kawałek płotu dość długo by się przeprawić.", []), nl,
         (
                 know(blindspot)
-                -> nl, write("Słyszałeś o miejscu, którego nie dosięgają reflektory."), nl,
+                -> nl,ansi_format([fg(cyan)],"Słyszałeś o miejscu, którego nie dosięgają reflektory.", []), nl,
                 write("Jeśli udało buy ci się je znaleźć to drut nie powinien sprawiać większych kłopotów."), nl,
-                write("Powinno być gdzieś na wschód..."),nl,nl
+                ansi_format([fg(cyan)], "Powinno być gdzieś na wschód...", []),nl,nl
                 ; nl
         ),
         write("Na południu znajduje sie plaża"), nl
@@ -336,14 +336,14 @@ opisz(beach) :-
                 (holding(ponton); holding(bron))
                 ->(
                         holding(ponton)
-                        -> write("Masz przygotowany improwizowany ponton."), nl,
-                        write("Wystarczy tylko go napompować i odpłynąć"), nl,nl,!
+                        -> ansi_format([fg(cyan)],"Masz przygotowany improwizowany ponton.", []), nl,
+                        ansi_format([fg(cyan)],"Wystarczy tylko go napompować i odpłynąć", []), nl,nl,!
                         ; nl,!
                 ),
                 (
                         holding(bron)
-                        -> write("W kieszeni nadal znajduje się twoja improwizowana broń."), nl,
-                        write("Jeżeli masz trochę szczęścia może będziesz w stanie obezwładnic strażników przy dokach i ukraść motorówkę?"), nl,nl,!
+                        -> ansi_format([fg(cyan)],"W kieszeni nadal znajduje się twoja improwizowana broń.", []), nl,
+                        ansi_format([fg(cyan)],"Jeżeli masz trochę szczęścia może będziesz w stanie obezwładnic strażników przy dokach i ukraść motorówkę?", []), nl,nl,!
                         ; nl,!
                 ),!
                 ; write("Nie masz niczego co pomogło by wam przeprawic się przez wody zatoki. Chyba nie przemyślałeś tego planu za dobrze."), nl,
@@ -362,7 +362,13 @@ opisz(docks) :-
         write("Dookoła molo kręci się para strażników. Na twoje szczęście, nikt się ciebie tu nie spodziewa."), nl,
         write("To daje ci okazję."), nl,
         write("Możesz spróbować ukraść łódź, ale nieważne jak szybko to zrobisz i tak zostaniesz zauważony tak długo jak strażnicy tu stoją."), nl,
-        write("Możesz poczekać na zmianę warty, przy odrobinie szczęścia ci dwoje postanowią zrobić sobie fajrant wcześniej."), nl, nl,
+        ansi_format([fg(cyan)],"Możesz poczekać na zmianę warty, przy odrobinie szczęścia ci dwoje postanowią zrobić sobie fajrant wcześniej." []), nl, nl,
+        (
+                holding(bron)
+                -> ansi_format([fg(cyan)], "Masz też swoją broń. Może w końcu jest szansa jej użyć...", [])
+                ;
+
+        )
         write("Na południe - morze, na wschód - plaża"), nl.
 
 opisz(sea) :-
@@ -372,13 +378,13 @@ opisz(sea) :-
         write("Nadal ryzykujesz, że dzien zastanie cię na otwartej wodzie."),nl,
         write("Wtedy gliny bardzo szybko zrobią z tobą porządek."), nl,
         write("Twoja ucieczka prawie dobiegła końca. Została tylko kwestia gdzie popłynąć..."),nl,nl,
-        write("Na południu rozciągają się doki i plaże San Francisco, może uda ci się wtopić w tłum jeśli masz cywilne ubrania"), nl,
-        write("Na wschodzie znajduje się niezamieszkała wyspa. Jest na niej kilka starych fortów w których mógłbyś się schować na pewien czas."), nl,
-        write("Na zachodzie jest nadbrzeze,"),
+        ansi_format([fg(cyan)], "Na południu rozciągają się doki i plaże San Francisco, może uda ci się wtopić w tłum jeśli masz cywilne ubrania", []), nl,
+        ansi_format([fg(cyan)],"Na wschodzie znajduje się niezamieszkała wyspa. Jest na niej kilka starych fortów w których mógłbyś się schować na pewien czas.", []), nl,
+        ansi_format([fg(cyan)],"Na zachodzie jest nadbrzeze,", []),
         (
                 know(friend)
-                -> write(" twój przyjaciel obiecał że będzie tam czekać"), nl
-                ; write(" ale nikt tam na ciebie nie czeka, a na piechotę ciężko ci będzie gdzieś dojść.")
+                -> ansi_format([fg(cyan)]," twój przyjaciel obiecał że będzie tam czekać", []), nl
+                ; ansi_format([fg(cyan)]," ale nikt tam na ciebie nie czeka, a na piechotę ciężko ci będzie gdzieś dojść.", [])
         ),
         nl.
 
@@ -435,7 +441,7 @@ opisz(city) :-
                 ; write("ale nadal masz na sobie więzienny pasiak, byle kto od razu cię rozpozna."), nl
         ),
         write("Zawsze można ukraść samochód."),nl,
-        write("idz(bus) albo idz(car)"),!, nl.
+        ansi_format([fg(cyan)],"idz(bus) albo idz(car)", []),!, nl.
 
 opisz(bus_ending) :-
         write("Czekasz na przystanku kilkanaście minut, aż przyjedzie autobus."), nl,
@@ -463,14 +469,14 @@ opisz(car_ending) :-
 /* warnings*/
 warn_about(fence) :-
         assert(warned(fence)),
-        write("Na pewno chcesz rzucić się przez płot tu i teraz?"), nl,
-        write("Najpewniej ci się nie uda bez wcześniejszego przygotowania."), nl,
+        ansi_format([fg(cyan)],"Na pewno chcesz rzucić się przez płot tu i teraz?", []), nl,
+        ansi_format([fg(red)],"Najpewniej ci się nie uda bez wcześniejszego przygotowania.", []), nl,
         nl,
         fail.
 
 warn_about(docks) :-
         assert(warned(docks)),
-        write("Na pewno chcesz pójść do łodzi mimo obecności strażników?"), nl.
+        ansi_format([fg(cyan)],"Na pewno chcesz pójść do łodzi mimo obecności strażników?", []), nl.
 
 warn_about(_).
 
@@ -496,9 +502,9 @@ get_boat :-
 
 win :-
         write("Z twojego starego domu dobiega odległe wycie syren..."), nl,nl,
-        write("Gratuluje! Udało ci się uciec z więzienia!"), nl,
+        ansi_format([fg(green)],"Gratuluje! Udało ci się uciec z więzienia!", []), nl,
         finish.
 
 lose :-
-        write("Mimo twoich starań, twój plan nie powiódł się na jego ostatnim etapie"), nl,
+        ansi_format([fg(red)],"Mimo twoich starań, twój plan nie powiódł się na jego ostatnim etapie", []), nl,
         finish.
