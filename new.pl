@@ -204,11 +204,12 @@ odkrec :- jestem_w(L), member(L, [szyb3, szyb6, szyb10]), kratka_usunieta(L), wr
 odkrec :- write('Nie ma tu kratki do odkręcenia.'), nl.
 
 ekwipunek :-
-        write('Masz przy sobie: '), nl,
-        mam(X),
-        write('- '), write(X), nl,
-        fail.
-ekwipunek :- write('Na razie nic nie podniosłeś.'), nl.
+    \+ mam(_), 
+    write('Na razie nic nie podniosłeś.'), nl, !.
+
+ekwipunek :-
+    write('Masz przy sobie: '), nl,
+    forall(mam(X), (write('- '), write(X), nl)).
 
 wyczysc_ekran :- write('\e[H\e[2J').
 
@@ -265,6 +266,23 @@ instrukcje :-
         write('rozejrzyj_sie.      -- rozejrzyj się'), nl,
         write('ekwipunek.          -- sprawdź ekwipunek'), nl,
         write('instrukcje.         -- pokaż instrukcje'), nl,
+        write('mapa.         -- pokaż mapę celi'), nl,
         write('halt.               -- zakończ grę'), nl, nl.
+
+
+mapa :-
+    nl,
+    write('W twojej celi znajdują się następujące miejsca:'), nl,
+    write('zlew           '), nl,
+    write('środek celi    '), nl,
+    write('łóżko          '), nl,
+    write('magazyn        '), nl,
+    write('krata wentylacyjna '), nl,
+    write('toaleta '), nl,
+    write('południowy zakątek '), nl,
+    nl.
+
+
+
 
 start :- instrukcje, rozejrzyj_sie.
