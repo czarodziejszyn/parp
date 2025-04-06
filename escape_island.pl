@@ -223,26 +223,29 @@ deduct_time(2) :-
 sprawdz_czas :-
         time_left(Hours),
         (
-                Hours = 0
+                Hours =< 0
                 -> ansi_format([fg(red)], "Słońce wyłoniło się już w pełni nad horyzont. Wiesz, że o tej porze w więzieniu jest pobudka.", []), nl,
                 ansi_format([fg(red)], "Z gmachu więzienia wydobywa się wycie syren. Wiedzą o twojej uciecze i mają cię jak na dłoni...", []), nl,
                 ansi_format([fg(red)], "Przynajmniej spróbowałeś ...", []), nl,
                 die(czas)
                 ; (
                         Hours = 5
-                        -> ansi_format([fg(red)], "Zostało ci ", []), write(Hours), write(" godzin"),nl,!
+                        -> ansi_format([fg(red)], "Zostało ci ", []), ansi_format([fg(red)],Hours, []), ansi_format([fg(red)]," godzin", []),nl,!
                         ; (
                                 Hours = 1
                                 -> write("Horyzont zaczyna odmieniać niewyraźna łuna światła."), nl,
                                 write("Za niespełna godzinę straznicy odkryją twoją ucieczkę, ale ty będziesz wtedy już daleko ... racja?"), nl, nl,
                                 write("Została ci jedna godzina"), nl,!
-                                ; write("Zostały ci "), write(Hours), write(" godziny"), nl,!
+                                ; ansi_format([fg(red)], "Zostały ci ", []), ansi_format([fg(red)], Hours, []), ansi_format([fg(red)]," godziny", []), nl,!
                         )
                 )
         ).
 
 
 finish :-
+        nl,
+        write('Gra dobiegła końca, wypisz halt. by wyjść'),
+        nl,
         retractall(at(_, _)), retractall(i_am_at(_)), retractall(alive(_)), retractall(fence_can_cross), retractall(warned(_)), retractall(guards_at(_)), retractall(can_go_on_water),
         assert(guards_at(docks)),
         retractall(time_left(_)),
@@ -252,12 +255,8 @@ finish :-
 
         assert(holding(ponton)), assert(holding(bron)), assert(know(friend)), assert(know(blindspot)),assert(holding(ubrania)),
         /* :- retractall(holding(_)), retractall(know(_)). */
+        assert(i_am_at(wall)).
 
-        /* map out area */
-        i_am_at(wall),
-        nl,
-        write('Gra dobiegła końca, wypisz halt. by wyjść'),
-        nl.
 
 /* This rule just writes out game instrukcje. */
 
@@ -288,9 +287,7 @@ start :-
 
         assert(holding(ponton)), assert(holding(bron)), assert(know(friend)), assert(know(blindspot)), assert(holding(ubrania)),
         /* :- retractall(holding(_)), retractall(know(_)). */
-
-        /* map out area */
-        i_am_at(wall),
+        assert(i_am_at(wall)),
         instrukcje,
         rozejrzyj.
 
