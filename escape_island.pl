@@ -7,7 +7,7 @@
 /* ------ carry over from prev stages ------- */
 /* ponton, bron, ubranie, know(friend), know(blindspot)*/
 
- :- assert(holding(ponton)), assert(holding(bron)), assert(know(friend)), assert(know(blindspot)).
+ :- assert(holding(ponton)), assert(holding(bron)), assert(know(friend)), assert(know(blindspot)), holding(ubrania).
 /* :- retractall(holding(_)), retractall(know(_)). */
 
 /* map out area */
@@ -34,14 +34,6 @@ path(sea, w, shore).
 
 path(city, car, car_ending).
 path(city, bus, bus_ending).
-
-/* map out objects */
-
-/* at(object, place)*/
-
-/* map out npcs */
-
-/* npc_at(npc, place) */
 
 /* COMMANDS */
 /* These rules define the direction letters as calls to idź/1. */
@@ -101,7 +93,7 @@ czekaj :-
         wait_at(Place).
 
 wait_at(fence) :-
-        /* second deduct time is on pupouse */
+        /* second deduct time is on purpose */
         deduct_time(1),
         fence_can_cross
         -> fail
@@ -385,9 +377,9 @@ opisz(sea) :-
         write("Mimo, że opuszczasz już wyspę nie oznacza to jeszcze spokoju."),nl,
         write("Nadal ryzykujesz, że dzien zastanie cię na otwartej wodzie."),nl,
         write("Wtedy gliny bardzo szybko zrobią z tobą porządek."), nl,
-        write("Twoja ucieczka prawie dobiegła końca. Została tylko kwesta gdzie popłynąć..."),nl,nl,
+        write("Twoja ucieczka prawie dobiegła końca. Została tylko kwestia gdzie popłynąć..."),nl,nl,
         write("Na południu rozciągają się doki i plaże San Francisco, może uda ci się wtopić w tłum jeśli masz cywilne ubrania"), nl,
-        write("Na wschodzie znajduje się niezamieszkałą wyspa. Jest na niej kilka starych fortów w których mógłbyś się schować na pewien czas."), nl,
+        write("Na wschodzie znajduje się niezamieszkała wyspa. Jest na niej kilka starych fortów w których mógłbyś się schować na pewien czas."), nl,
         write("Na zachodzie jest nadbrzeze,"),
         (
                 know(friend)
@@ -437,7 +429,7 @@ opisz(shore):-
 opisz(city) :-
         write("Płyniesz w stronę świateł San francisco."),nl,
         write("Przeprawa wydaje się trwać znacznie dłużej niż powinna. Emocje szarpią twoimi nerwami."),nl,nl,
-        write("Dopływasz do turystycznego molo niedaleko golden gate beach."),nl,
+        write("Dopływasz do turystycznego molo niedaleko Golden Gate Beach."),nl,
         write("Nie spodziewasz się tu dużej ilości ludzi tak blisko do świtu."),nl,nl,
         write("Wchodzisz na brzeg"),nl,nl,
         write("Teraz wystarczy wydostać się z miasta."),
@@ -449,7 +441,7 @@ opisz(city) :-
                 ; write("ale nadal masz na sobie więzienny pasiak, byle kto od razu cię rozpozna."), nl
         ),
         write("Zawsze można ukraść samochód."),nl,
-        write("idź(bus) albo bo(car)"),!, nl.
+        write("idz(bus) albo idz(car)"),!, nl.
 
 opisz(bus_ending) :-
         write("Czekasz na przystanku kilkanaście minut, aż przyjedzie autobus."), nl,
@@ -460,7 +452,7 @@ opisz(bus_ending) :-
                 -> write("dzięki czemu nie zauważa, że nie kupujesz biletu."), nl,
                 write("Widocznie uznał, że masz czasowy... albo nie chce się awanturować."), nl,nl,
                 win
-                ; write("ale widok towjego pasiaka natychmiast go rozbudza."), nl,
+                ; write("ale widok twojego pasiaka natychmiast go rozbudza."), nl,
                 write("Wiesz, że gdziekolwiek nie wysiądziesz, pogoń będzie dyszeć ci na kark."), nl,nl,
                 lose
         ).
