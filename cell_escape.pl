@@ -79,8 +79,8 @@ idz(Kierunek) :-
         sciezka(Tutaj, Kierunek, Tam),
         retract(jestem_w(Tutaj)),
         assert(jestem_w(Tam)),
-        !, rozejrzyj_sie,
-        (jestem_w(ziemia) -> reset_game ; true).
+        !, rozejrzyj,
+        (jestem_w(ziemia) -> reset_game_1 ; true).
 
 idz(n) :-
     jestem_w(wentylacja),
@@ -90,7 +90,7 @@ idz(n) :-
     assert(jestem_w(szyb1)),
     assert(w_szybie),
     write_czerwony('Wciskasz się do szybu wentylacyjnego. Jest ciasno i ciemno... użyj skrótów, by uciec.'), nl,
-    rozejrzyj_sie, !.
+    rozejrzyj, !.
 
 idz(_) :-
     write_zolty('Nie możesz tam iść.'), nl.
@@ -100,7 +100,7 @@ s :- idz(s).
 e :- idz(e).
 w :- idz(w).
 
-rozejrzyj_sie :-
+rozejrzyj :-
         jestem_w(Miejsce),
         opis(Miejsce), nl,
         obiekty_w_miejscu(Miejsce), nl,
@@ -157,14 +157,14 @@ poloz_manekina :-
 poloz_manekina :-
         write_zolty('Manekina można położyć tylko na łóżku.'), nl.
 
-zrob_atrape_wentylacji :-
+zrob_atrape :-
         mam(sznurek), mam(drut), mam(material),
         retract(mam(sznurek)),
         retract(mam(drut)),
         retract(mam(material)),
         assert(mam(atrapa_wentylacji)),
         write_czerwony('Stworzyłeś atrapę wentylacji!'), nl, !.
-zrob_atrape_wentylacji :-
+zrob_atrape :-
         write_zolty('Potrzebujesz sznurka, drutu i materiału, by zrobić atrapę.'), nl.
 
 poloz_atrape :-
@@ -220,8 +220,8 @@ ekwipunek :-
 
 
 
-opis(centrum_celi) :- write_zolty('Jesteś w centrum swojej celi. Skompletuj ekwipunek do ucieczki.'), nl.
-opis(lozko) :- write_zolty('łóżko. Może znajdziesz tu coś, z czego zrobisz manekina?'), nl.
+opis(centrum_celi) :- write_zolty('Jesteś w centrum swojej celi. Skompletuj ekwipunek do ucieczki.').
+opis(lozko) :- write_zolty('Łóżko. Może znajdziesz tu coś, z czego zrobisz manekina?'), nl.
 opis(toaleta) :- write_zolty('Jesteś przy toalecie. Widzisz śrubokręt.'), nl.
 opis(magazynek) :- write_zolty('Magazynek. Znajdziesz tu narzędzia.'), nl.
 opis(poludnie) :- write_zolty('Południowy zakątek. Są tu płaszcze przeciwdeszczowe i klej.'), nl.
@@ -258,46 +258,63 @@ moge_uciec :-
     mam(klej).
 
 koniec :-
-    reset_game.
+    reset_game_1.
 
 instrukcje :-
-        write_zolty('Dostępne polecenia:'), nl,
-        write_zolty('start.             -- rozpocznij grę'), nl,
-        write_zolty('n. s. e. w.        -- poruszanie się'), nl,
-        write_zolty('wez(Przedmiot).     -- podnieś przedmiot'), nl,
-        write_zolty('upusc(Przedmiot).   -- upuść przedmiot'), nl,
-        write_zolty('zrob_manekina.      -- stwórz manekina'), nl,
-        write_zolty('poloz_manekina.     -- połóż manekina'), nl,
-        write_zolty('zrob_atrape_wentylacji.  -- zrób atrapę wentylacji'), nl,
-        write_zolty('poloz_atrape.       -- umieść atrapę'), nl,
-        write_zolty('wierc.              -- rozwierć wentylację'), nl,
-        write_zolty('odkrec.             -- odkręć kratkę'), nl,
-        write_zolty('rozejrzyj_sie.      -- rozejrzyj się'), nl,
-        write_zolty('ekwipunek.          -- sprawdź ekwipunek'), nl,
-        write_zolty('instrukcje.         -- pokaż instrukcje'), nl,
-        write_zolty('mapa.         -- pokaż mapę celi'), nl,
-        write_zolty('halt.               -- zakończ grę'), nl, nl.
+        write('Dostępne komendy:'), nl,
+        write('n. s. e. w.          -- poruszanie się.'), nl,
+        write('wez(Przedmiot).      -- podnieś przedmiot.'), nl,
+        write('upusc(Przedmiot).    -- upuść przedmiot.'), nl,
+        write('zrob_manekina.       -- stwórz manekina.'), nl,
+        write('poloz_manekina.      -- połóż manekina.'), nl,
+        write('zrob_atrape.         -- zrób atrapę wentylacji.'), nl,
+        write('poloz_atrape.        -- umieść atrapę.'), nl,
+        write('wierc.               -- rozwierć wentylację.'), nl,
+        write('odkrec.              -- odkręć kratkę.'), nl,
+        write('rozejrzyj.           -- rozejrzyj się.'), nl,
+        write('ekwipunek.           -- sprawdź ekwipunek.'), nl,
+        write('instrukcje.          -- pokaż instrukcje.'), nl,
+        write('mapa.                -- pokaż mapę celi.'), nl,
+        write('halt.                -- zakończ grę.'), nl, nl.
 
 
 mapa :-
-    nl,
-    write_niebieski('W twojej celi znajdują się następujące miejsca:'), nl,
-    write_niebieski('zlew           '), nl,
-    write_niebieski('środek celi    '), nl,
-    write_niebieski('łóżko          '), nl,
-    write_niebieski('magazyn        '), nl,
-    write_niebieski('krata wentylacyjna '), nl,
-    write_niebieski('toaleta '), nl,
-    write_niebieski('południowy zakątek '), nl,
-    nl.
+    % nl,
+    % write_niebieski('W twojej celi znajdują się następujące miejsca:'), nl,
+    % write_niebieski('zlew           '), nl,
+    % write_niebieski('środek celi    '), nl,
+    % write_niebieski('łóżko          '), nl,
+    % write_niebieski('magazyn        '), nl,
+    % write_niebieski('krata wentylacyjna '), nl,
+    % write_niebieski('toaleta '), nl,
+    % write_niebieski('południowy zakątek '), nl,
+    % nl.
+
+    write_niebieski("                ┌───────────┐\n
+                │    bed    │\n
+                └───────────┘\n
+                      │\n
+                ┌───━─────────┐\n
+        ┌─────▶ │ cell center │◀─────┐\n
+        │       └─────────────┘      │\n
+        │             │              │\n
+   ┌────────┐   ┌──────────┐   ┌────────┐\n
+   │storage │   │south area│   │ toilet │\n
+   └────────┘   └──────────┘   └────────┘\n
+        │                            │\n
+   ┌───────────┐                 ┌──────┐\n
+   │ventilation│                 │ sink │\n
+   └───────────┘                 └──────┘\n").
 
 
 
 
-start :- instrukcje, rozejrzyj_sie.
+start :-
+    instrukcje, 
+    rozejrzyj.
 
 
-reset_game :-
+reset_game_1 :-
     retractall(jestem_w(_)),
     retractall(znajduje_sie(_, _)),
     retractall(mam(_)),
@@ -323,13 +340,13 @@ reset_game :-
     abolish(e/0),
     abolish(w/0),
     abolish(s/0),
-    abolish(rozejrzyj_sie/0),
+    abolish(rozejrzyj/0),
     abolish(obiekty_w_miejscu/1),
     abolish(wez/1),
     abolish(upusc/1),
     abolish(zrob_manekina/0),
     abolish(poloz_manekina/0),
-    abolish(zrob_atrape_wentylacji/0),
+    abolish(zrob_atrape/0),
     abolish(poloz_atrape/0),
     abolish(wierc/0),
     abolish(odkrec/0),

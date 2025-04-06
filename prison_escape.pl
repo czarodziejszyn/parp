@@ -76,7 +76,8 @@ idz(Miejsce) :-
     lokacja(Miejsce, Opis),
     retractall(pozycja_gracza(_)),
     assertz(pozycja_gracza(Miejsce)),
-    ansi_format([fg(green)], '~w~n', [Opis]), !.
+    ansi_format([fg(green)], '~w~n', [Opis]), !,
+    rozejrzyj.
 
 idz(_) :-
     ansi_format([fg(red)], 'Nie ma takiego miejsca!~n', []), !.
@@ -132,18 +133,18 @@ porozmawiaj(Rozmowca) :-
     ansi_format([fg(red)], 'Nie ma tu nikogo o imieniu "~w".~n', [Rozmowca]), !.
 
 potrzebne_do_ucieczki([
-    drut,
-    farba,
-    kontakt,
-    material,
-    mydlo,
-    papier,    
-    plaszcze,
-    srubokret,
-    sznurek,
-    sztucce,
-    ubrania,
-    wlosy
+    % drut,
+    % farba,
+    % kontakt,
+    % material,
+    % mydlo,
+    % papier,    
+    % plaszcze,
+    % srubokret,
+    % sznurek,
+    % sztucce,
+    % ubrania,
+    % wlosy
 ]).
 
 rozejrzyj :-
@@ -203,7 +204,8 @@ start_rozmowy :-
 
 ucieczka_z_wiezienia :-
     nl,
-    write('Masz wszystko czego potrzeba do ucieczki, pora poukrywać przedmioty po celi, żeby nie wzbudzały podejrzeń, poczekać na noc i rozpocząć ucieczkę.'), nl,
+    write('Masz wszystko czego potrzeba do ucieczki. Z mydła i skarpetek znalezionych w ubraniach robisz prowizoryczną broń. Pora poukrywać przedmioty po celi, żeby nie wzbudzały podejrzeń, poczekać na noc i rozpocząć ucieczkę.'), nl, nl,
+    write('Otrzymujesz nowy zestaw instrukcji dostępny po wpisaniu polecenia "instrukcje".'), nl,
     reset_game, !.
 
 uzyj(Przedmiot) :-
@@ -337,4 +339,4 @@ reset_game :-
     abolish(wypisz_postacie/1),
     abolish(wypisz_przedmioty/1),
 
-    consult('new.pl').
+    consult('cell_escape.pl').
