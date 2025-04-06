@@ -28,7 +28,7 @@ path(sea, n, island).
 path(sea, w, shore).
 
 path(city, car, car_ending).
-path(city, bus, bus_ending)
+path(city, bus, bus_ending).
 
 /* map out objects */
 
@@ -57,9 +57,19 @@ go(Direction) :-
         -> determine(fence),!
         ; i_am_at(docks)
         -> determine(docks), !
-        ; retract(i_am_at(Here)),
-        assert(i_am_at(There)),
-        look,!
+        ; (
+                There = sea
+                -> (
+                        can_go_on_water
+                        -> retract(i_am_at(Here)),
+                        assert(i_am_at(There)),
+                        look,!
+                        ; write("Nie masz na czym płynąć"), nl
+                )
+                ; retract(i_am_at(Here)),
+                assert(i_am_at(There)),
+                look,!
+        )
         ).
 
 go(_) :-
@@ -146,8 +156,12 @@ die(_) :-
 use(float) :-
         (
                 i_am_at(beach)
-                -> write(""), nl
-                ; write(""), nl
+                -> assert(can_go_on_water),
+                write("Po dłuższym czasie pompowania ponton nabrał kształtu."), nl,
+                write("Twój improwizowany majstersztyk czeka gotowy na dziewiczą podróż."),nl,
+                write("Masz tylko nadzieję, że zdoła unieść twój ciężar ... przynajmniej na tyle długo by resztę drogi pokonać wpław."), nl,
+                write("Na twoje szczęście morze jest dziś bardzo spokojne, żadna fala nie powinna pokrzyżować twoich planów."), nl,nl
+                ; write("Nie jest to dobre miejsce do napompowania pontonu"), nl
         ).
 
 use(_) :-
@@ -256,12 +270,12 @@ describe(sea) :-
         write("Twoja ucieczka prawie dobiegła końca. Została tylko kwesta gdzie popłynąć..."),nl,nl,
         write("Na południu rozciągają się doki i plaże San Francisco, może uda ci się wtopić w tłum jeśli masz cywilne ubrania"), nl,
         write("Na północy znajduja się niezamieszkałą wyspa. Jest na niej kilka starych fortów w których mógłyś się schować na pewien czas."), nl,
-        write("Na zachodzie jest nadbrzerze,")
+        write("Na zachodzie jest nadbrzerze,"),
         (
                 friend
                 -> write(" twój przyjaciel obiecał że będzie tam czekać"), nl
                 ; write(" ale nikt tam na ciebie nie czeka, a na piechotę ciężko ci będzie gdzieś dojść.")
-        )
+        ),
         nl.
 
 
@@ -295,12 +309,12 @@ describe(shore):-
                         holding(clothes)
                         -> write("Przynajmniej masz szansę wtopić się w tłum na jakiś czas."),nl,
                         write("Próbujesz odprężyć się zanim ktoś cię zobaczy. Zostaje ci jedynie iść naprzód."),nl,
-                        win.
+                        win
                         ; write("A oni natychmiast rozpoznają pasiak który masz na sobie."), nl,
-                        write("Przynajmniej będziesz mieć co opowiadać po powrocie do celi."),nl
-                        lose.
+                        write("Przynajmniej będziesz mieć co opowiadać po powrocie do celi."),nl,
+                        lose
                 )
-        )
+        ).
 
 describe(city) :-
         write("Płyniesz w stronę świateł San francisco."),nl,
@@ -315,26 +329,26 @@ describe(city) :-
                 holding(clothes)
                 -> write("Masz na sobie cywilne ubrania więc nik nie powinien cię natychmiast rozpoznać."), nl
                 ; write("ale nadal masz na sobie więzienny pasiak, byle kto od razu cię rozpozna."), nl
-        )
-        write("Zawsze można ukraść samochód.")
-        write("go(bus) albo bo(car)")
+        ),
+        write("Zawsze można ukraść samochód."),nl,
+        write("go(bus) albo bo(car)"),!, nl.
 
-describe(bus) :-
+describe(bus_ending) :-
         write("Czekasz na przystanku kilkanaście minut, aż przyjedzie autobus."), nl,
         write("Drzwi otwierają się, a za kierownica siedzi stary kruchy mężczyzna."), nl,
-        write("Wydaje się zmęczony ...")
+        write("Wydaje się zmęczony ..."),
         (
                 holding(clothes)
                 -> write("dzięki czemu nie zauważa, że nie kupujesz biletu."), nl,
                 write("Widocznie uznał, że masz czasowy... albo nie chce się awanturować."), nl,nl,
-                win.
+                win
                 ; write("ale widok towjego pasiaka natychmiast go rozbudza."), nl,
-                write("Wiesz, że gdziekolwiek nie wysiądziesz, pogoń będzie dyszeć ci na kark."), nl,nl
-                lose.
-        )
+                write("Wiesz, że gdziekolwiek nie wysiądziesz, pogoń będzie dyszeć ci na kark."), nl,nl,
+                lose
+        ).
 
 
-describe(car) :-
+describe(car_ending) :-
         write("Na pobliskim parkingu stoi kilka aut. Zbliżając się dostrzegasz w kilku z nich śpiących ludzi."), nl,
         write("Po otaczającej cię woni wnioskujesz, że są to imprezowicze."), nl,
         write("Próbujesz szczęścia z kilkoma samochodami, dopóki nie znajdujesz tego czego szukasz. Ktoś zapomniał zamknąć tylnych drzwi."), nl,
@@ -376,7 +390,7 @@ get_boat :-
 /* win and lose */
 
 win :-
-        write("Z twojego starego domu dobiega odległe wycie syren..."), nl,nl
+        write("Z twojego starego domu dobiega odległe wycie syren..."), nl,nl,
         write("Gratuluje! Udało ci się uciec z więzienia!"), nl,
         finish.
 
