@@ -60,7 +60,6 @@ ilosc_uzyc_noza(0).
 ilosc_uzyc_lyzki(0).
 
 idz(Kierunek) :-
-        wyczysc_ekran,
         jestem_w(Tutaj),
         sciezka(Tutaj, Kierunek, Tam),
         retract(jestem_w(Tutaj)),
@@ -75,12 +74,10 @@ idz(n) :-
     retract(jestem_w(wentylacja)),
     assert(jestem_w(szyb1)),
     assert(w_szybie),
-    wyczysc_ekran,
     write('Wciskasz się do szybu wentylacyjnego. Jest ciasno i ciemno... użyj skrótów, by uciec.'), nl,
     rozejrzyj_sie, !.
 
 idz(_) :-
-    wyczysc_ekran,
     write('Nie możesz tam iść.'), nl.
 
 n :- idz(n).
@@ -89,7 +86,6 @@ e :- idz(e).
 w :- idz(w).
 
 rozejrzyj_sie :-
-        wyczysc_ekran,
         jestem_w(Miejsce),
         opis(Miejsce), nl,
         obiekty_w_miejscu(Miejsce), nl,
@@ -102,12 +98,10 @@ obiekty_w_miejscu(Miejsce) :-
 obiekty_w_miejscu(_).
 
 wez(X) :-
-        wyczysc_ekran,
         mam(X),
         write('Już to masz przy sobie!'), nl, !.
 
 wez(X) :-
-        wyczysc_ekran,
         jestem_w(Miejsce),
         znajduje_sie(X, Miejsce),
         retract(znajduje_sie(X, Miejsce)),
@@ -115,11 +109,9 @@ wez(X) :-
         write('Podniosłeś: '), write(X), write('.'), nl, !.
 
 wez(_) :-
-        wyczysc_ekran,
         write('Tutaj nie ma takiego przedmiotu.'), nl.
 
 upusc(X) :-
-        wyczysc_ekran,
         mam(X),
         jestem_w(Miejsce),
         retract(mam(X)),
@@ -127,7 +119,6 @@ upusc(X) :-
         write('Upuściłeś: '), write(X), write('.'), nl, !.
 
 upusc(_) :-
-        wyczysc_ekran,
         write('Nie masz tego przy sobie.'), nl.
 
 zrob_manekina :-
@@ -212,7 +203,7 @@ ekwipunek :-
     write('Masz przy sobie: '), nl,
     forall(mam(X), (write('- '), write(X), nl)).
 
-wyczysc_ekran :- write('\e[H\e[2J').
+
 
 opis(centrum_celi) :- write('Jesteś w centrum swojej celi. Skompletuj ekwipunek do ucieczki.'), nl.
 opis(lozko) :- write('łóżko. Może znajdziesz tu coś, z czego zrobisz manekina?'), nl.
@@ -255,7 +246,6 @@ koniec :-
     reset_game.
 
 instrukcje :-
-        wyczysc_ekran,
         write('Dostępne polecenia:'), nl,
         write('start.             -- rozpocznij grę'), nl,
         write('n. s. e. w.        -- poruszanie się'), nl,
@@ -329,7 +319,6 @@ reset_game :-
     abolish(wierc/0),
     abolish(odkrec/0),
     abolish(ekwipunek/0),
-    abolish(wyczysc_ekran/0),
     abolish(opis/1),
     abolish(moge_uciec/0),
     abolish(instrukcje/0),
