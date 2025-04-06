@@ -4,8 +4,9 @@
 :- assert(guards_at(docks)).
 /* carry ober from prev stages */
 /* float, weapon, clothes, friend from outside*/
-:- assert(holding(float_device)), assert(holding(weapon)), assert(friend).
-/*retractall(holding(_))*/
+/* :- assert(holding(float_device)), assert(holding(weapon)), assert(friend).*/
+
+:- retractall(holding(_)), retractall(friend).
 
 /* map out area */
 i_am_at(wall).
@@ -64,7 +65,7 @@ go(Direction) :-
                         -> retract(i_am_at(Here)),
                         assert(i_am_at(There)),
                         look,!
-                        ; write("Nie masz na czym płynąć"), nl
+                        ; write("Nie masz na czym płynąć"), nl, !
                 )
                 ; retract(i_am_at(Here)),
                 assert(i_am_at(There)),
@@ -154,15 +155,40 @@ die(_) :-
 
 
 use(float) :-
-        (
+        holding(float)
+        -> (
                 i_am_at(beach)
-                -> assert(can_go_on_water),
-                write("Po dłuższym czasie pompowania ponton nabrał kształtu."), nl,
-                write("Twój improwizowany majstersztyk czeka gotowy na dziewiczą podróż."),nl,
-                write("Masz tylko nadzieję, że zdoła unieść twój ciężar ... przynajmniej na tyle długo by resztę drogi pokonać wpław."), nl,
-                write("Na twoje szczęście morze jest dziś bardzo spokojne, żadna fala nie powinna pokrzyżować twoich planów."),!, nl,nl
+                ->(
+                        can_go_on_water
+                        -> assert(can_go_on_water),
+                        write("Po dłuższym czasie pompowania ponton nabrał kształtu."), nl,
+                        write("Twój improwizowany majstersztyk czeka gotowy na dziewiczą podróż."),nl,
+                        write("Masz tylko nadzieję, że zdoła unieść twój ciężar ... przynajmniej na tyle długo by resztę drogi pokonać wpław."), nl,
+                        write("Na twoje szczęście morze jest dziś bardzo spokojne, żadna fala nie powinna pokrzyżować twoich planów."),!, nl,nl
+                        ; write("Ponton jest już napompowany!"), nl
+                )
                 ; write("Nie jest to dobre miejsce do napompowania pontonu"),!, nl
-        ),!.
+        ),!
+        ; write("Nie masz pontonu!"), nl,!.
+
+use(weapon) :-
+        holding(weapon)
+        -> (
+                i_am_at(docks)
+                ->(
+                        guards_at(docks)
+                        -> assert(guards_at(someplace)),
+                        assert(can_go_on_water),
+                        write("Strażnicy nie są przygotowani na twój atak."), nl,
+                        write("Udaje ci się zakraść niedaleko jednego ze strażników."),nl,
+                        write(" Rzucasz się na bliższego sobie strażnika, i zdzieliłeś go po głowie."), nl,
+                        write("Zanim drugi zorientuje się co się dzieje, także dostaje po głowie."), nl,nl,
+                        write("Jesteś sam na doku..."), !,nl
+                        ; write("Nie ma tu przeciwników."), nl,!
+                )
+                ; write("Nie ma tu przeciwników."), nl,!
+        )
+        ; write("Nie masz broni!"), nl,!.
 
 use(_) :-
         write("Nie możesz tego tu użyć"), nl.
