@@ -250,7 +250,7 @@ finish :-
         /* ------ carry over from prev stages ------- */
         /* ponton, bron, ubranie, know(friend), know(blindspot)*/
 
-        assert(holding(ponton)), assert(holding(bron)), assert(know(friend)), assert(know(blindspot)),
+        assert(holding(ponton)), assert(holding(bron)), assert(know(friend)), assert(know(blindspot)),assert(holding(ubrania)),
         /* :- retractall(holding(_)), retractall(know(_)). */
 
         /* map out area */
@@ -286,7 +286,7 @@ start :-
         /* ------ carry over from prev stages ------- */
         /* ponton, bron, ubranie, know(friend), know(blindspot)*/
 
-        assert(holding(ponton)), assert(holding(bron)), assert(know(friend)), assert(know(blindspot)),
+        assert(holding(ponton)), assert(holding(bron)), assert(know(friend)), assert(know(blindspot)), assert(holding(ubrania)),
         /* :- retractall(holding(_)), retractall(know(_)). */
 
         /* map out area */
