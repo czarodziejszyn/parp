@@ -224,10 +224,10 @@ opis(zlew) :- write('Zlew. Jest tu sznurek, drut i kawałek materiału.'), nl.
 
 opis(szyb1) :- write('Wpełzasz do ciasnego kanału. Przed Tobą zakręt.'), nl.
 opis(szyb2) :- write('Bardzo ciasno.'), nl.
-opis(szyb3) :- (kratka_usunieta(szyb3) -> write('Kratka wschodnia usunięta. Można przejść.'), nl ; write('Kratka blokuje drogę na wschód.'), nl).
+opis(szyb3) :- (kratka_usunieta(szyb3) -> write('Kratka usunięta. Można przejść.'), nl ; write('Kratka blokuje dalszą drogę.'), nl).
 opis(szyb4) :- write('Kanał schodzi w dół.'), nl.
 opis(szyb5) :- write('Dalej w dół...'), nl.
-opis(szyb6) :- (kratka_usunieta(szyb6) -> write('Wejście w górę wolne.'), nl ; write('Kratka blokuje wejście w górę.'), nl).
+opis(szyb6) :- (kratka_usunieta(szyb6) -> write('Droga wolna.'), nl ; write('Kratka blokuje wejście w górę.'), nl).
 opis(szyb7) :- write('Duszne, ciasne przejście. Trzeba iść dalej.'), nl.
 opis(szyb8) :- write('Coś słychać nad Tobą... już blisko?'), nl.
 opis(szyb9) :- write('Pachnie świeżym powietrzem!'), nl.
