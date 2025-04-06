@@ -65,7 +65,8 @@ idz(Kierunek) :-
         sciezka(Tutaj, Kierunek, Tam),
         retract(jestem_w(Tutaj)),
         assert(jestem_w(Tam)),
-        !, rozejrzyj_sie.
+        !, rozejrzyj_sie,
+        (jestem_w(ziemia) -> reset_game ; true).
 
 idz(n) :-
     jestem_w(wentylacja),
@@ -240,7 +241,7 @@ opis(zejscie2) :- write('Jesteś na wysokości około 4. piętra. Trzymaj się m
 opis(zejscie3) :- write('Połowa drogi. Nie ma odwrotu...'), nl.
 opis(zejscie4) :- write('Już blisko ziemi. Nie puść się!'), nl.
 opis(zejscie5) :- write('Jeszcze kawałek... już prawie!'), nl.
-opis(ziemia) :- write('Bezpiecznie dotarłeś na dół. Jesteś wolny!'), nl, write(' Gratulacje — Uciekłeś z więzienia! '), nl, halt.
+opis(ziemia) :- write('Bezpiecznie dotarłeś na dół. Jesteś wolny!'), nl.
 
 moge_uciec :-
     znajduje_sie(manekin, lozko),
@@ -249,6 +250,9 @@ moge_uciec :-
     mam(srubokret),
     mam(plaszcz),
     mam(klej).
+
+koniec :-
+    reset_game.
 
 instrukcje :-
         wyczysc_ekran,
@@ -286,3 +290,49 @@ mapa :-
 
 
 start :- instrukcje, rozejrzyj_sie.
+
+
+reset_game :-
+    retractall(jestem_w(_)),
+    retractall(znajduje_sie(_, _)),
+    retractall(mam(_)),
+    retractall(ilosc_uzyc_noza(_)),
+    retractall(ilosc_uzyc_lyzki(_)),
+    retractall(wentylacja_otwarta),
+    retractall(w_szybie),
+    retractall(sruby_kratki(_, _)),
+    retractall(kratka_usunieta(_)),
+
+    abolish(jestem_w/1),
+    abolish(znajduje_sie/2),
+    abolish(mam/1),
+    abolish(ilosc_uzyc_noza/1),
+    abolish(ilosc_uzyc_lyzki/1),
+    abolish(wentylacja_otwarta/0),
+    abolish(w_szybie/0),
+    abolish(sruby_kratki/2),
+    abolish(kratka_usunieta/1),
+
+    abolish(idz/1),
+    abolish(n/0),
+    abolish(e/0),
+    abolish(w/0),
+    abolish(rozejrzyj_sie/0),
+    abolish(obiekty_w_miejscu/1),
+    abolish(wez/1),
+    abolish(upusc/1),
+    abolish(zrob_manekina/0),
+    abolish(poloz_manekina/0),
+    abolish(zrob_atrape_wentylacji/0),
+    abolish(poloz_atrape/0),
+    abolish(wierc/0),
+    abolish(odkrec/0),
+    abolish(ekwipunek/0),
+    abolish(wyczysc_ekran/0),
+    abolish(opis/1),
+    abolish(moge_uciec/0),
+    abolish(instrukcje/0),
+    abolish(mapa/0),
+    abolish(start/0),
+
+    consult('escape_island.pl').
