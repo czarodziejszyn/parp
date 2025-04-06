@@ -1,302 +1,270 @@
-:- dynamic i_am_at/1, at/2, holding/1, knife_uses/1, spoon_uses/1, ventilation_open/0, in_shaft/0.
-:- dynamic bar_screws/2, bar_removed/1.
+:- dynamic jestem_w/1, znajduje_sie/2, mam/1, ilosc_uzyc_noza/1, ilosc_uzyc_lyzki/1, wentylacja_otwarta/0, w_szybie/0.
+:- dynamic sruby_kratki/2, kratka_usunieta/1.
 
-:- retractall(at(_, _)), retractall(i_am_at(_)), retractall(knife_uses(_)), retractall(spoon_uses(_)), retractall(in_shaft).
-:- retractall(bar_screws(_, _)), retractall(bar_removed(_)), retractall(ventilation_open).
+:- retractall(znajduje_sie(_, _)), retractall(jestem_w(_)), retractall(ilosc_uzyc_noza(_)), retractall(ilosc_uzyc_lyzki(_)), retractall(w_szybie).
+:- retractall(sruby_kratki(_, _)), retractall(kratka_usunieta(_)), retractall(wentylacja_otwarta).
 
-/* Lokalizacja startowa gracza */
-i_am_at(cage_center).
+jestem_w(centrum_celi).
 
-/* Liczba śrub w kratkach */
-bar_screws(shaft3, 0).
-bar_screws(shaft6, 0).
-bar_screws(shaft10, 0).
+sruby_kratki(szyb3, 0).
+sruby_kratki(szyb6, 0).
+sruby_kratki(szyb10, 0).
 
-/* Ścieżki w celi */
-path(cage_center, n, bed_area).
-path(bed_area, s, cage_center).
-path(cage_center, w, toilet).
-path(toilet, e, cage_center).
-path(cage_center, e, storage).
-path(storage, w, cage_center).
-path(cage_center, s, south_area).
-path(south_area, n, cage_center).
-path(storage, e, ventilation).
-path(ventilation, w, storage).
-path(toilet, w, sink).
-path(sink, e, toilet).
+sciezka(centrum_celi, n, lozko).
+sciezka(lozko, s, centrum_celi).
+sciezka(centrum_celi, w, toaleta).
+sciezka(toaleta, e, centrum_celi).
+sciezka(centrum_celi, e, magazynek).
+sciezka(magazynek, w, centrum_celi).
+sciezka(centrum_celi, s, poludnie).
+sciezka(poludnie, n, centrum_celi).
+sciezka(magazynek, e, wentylacja).
+sciezka(wentylacja, w, magazynek).
+sciezka(toaleta, w, zlew).
+sciezka(zlew, e, toaleta).
 
-/* Tunel wentylacyjny */
-path(ventilation, n, shaft1) :- can_escape, \+ in_shaft.
-path(shaft1, n, shaft2).
-path(shaft2, e, shaft3).
-path(shaft3, e, shaft4) :- bar_removed(shaft3).
-path(shaft4, s, shaft5).
-path(shaft5, s, shaft6).
-path(shaft6, n, shaft7) :- bar_removed(shaft6).
-path(shaft7, n, shaft8).
-path(shaft8, n, shaft9).
-path(shaft9, n, shaft10).
-path(shaft10, s, shaft11) :- bar_removed(shaft10).
-path(shaft11, w, shaft12).
-path(shaft12, n, roof).
+sciezka(wentylacja, n, szyb1) :- moge_uciec, \+ w_szybie.
+sciezka(szyb1, n, szyb2).
+sciezka(szyb2, e, szyb3).
+sciezka(szyb3, e, szyb4) :- kratka_usunieta(szyb3).
+sciezka(szyb4, s, szyb5).
+sciezka(szyb5, s, szyb6).
+sciezka(szyb6, n, szyb7) :- kratka_usunieta(szyb6).
+sciezka(szyb7, n, szyb8).
+sciezka(szyb8, n, szyb9).
+sciezka(szyb9, n, szyb10).
+sciezka(szyb10, s, szyb11) :- kratka_usunieta(szyb10).
+sciezka(szyb11, w, szyb12).
+sciezka(szyb12, n, dach).
 
-/* Etapy zejścia z dachu */
-path(roof, s, descent1).
-path(descent1, s, descent2).
-path(descent2, s, descent3).
-path(descent3, s, descent4).
-path(descent4, s, descent5).
-path(descent5, s, ground).
+sciezka(dach, s, zejscie1).
+sciezka(zejscie1, s, zejscie2).
+sciezka(zejscie2, s, zejscie3).
+sciezka(zejscie3, s, zejscie4).
+sciezka(zejscie4, s, zejscie5).
+sciezka(zejscie5, s, ziemia).
 
-/* Przedmioty */
-at(paint, bed_area).
-at(hair, bed_area).
-at(paper, bed_area).
-at(screwdriver, toilet).
-at(spoon, storage).
-at(knife, storage).
-at(raincoat, south_area).
-at(glue, south_area).
-at(string, sink).
-at(wire, sink).
-at(cloth, sink).
+znajduje_sie(farba, lozko).
+znajduje_sie(wlosy, lozko).
+znajduje_sie(papier, lozko).
+znajduje_sie(srubokret, toaleta).
+znajduje_sie(lyzka, magazynek).
+znajduje_sie(noz, magazynek).
+znajduje_sie(plaszcz, poludnie).
+znajduje_sie(klej, poludnie).
+znajduje_sie(sznurek, zlew).
+znajduje_sie(drut, zlew).
+znajduje_sie(material, zlew).
 
-/* Narzędzia */
-knife_uses(0).
-spoon_uses(0).
+ilosc_uzyc_noza(0).
+ilosc_uzyc_lyzki(0).
 
-/* Poruszanie się */
-go(Direction) :-
-        clear_screen,
-        i_am_at(Here),
-        path(Here, Direction, There),
-        retract(i_am_at(Here)),
-        assert(i_am_at(There)),
-        !, look.
+idz(Kierunek) :-
+        wyczysc_ekran,
+        jestem_w(Tutaj),
+        sciezka(Tutaj, Kierunek, Tam),
+        retract(jestem_w(Tutaj)),
+        assert(jestem_w(Tam)),
+        !, rozejrzyj_sie.
 
-go(n) :-
-    i_am_at(ventilation),
-    can_escape,
-    \+ in_shaft,
-    retract(i_am_at(ventilation)),
-    assert(i_am_at(shaft1)),
-    assert(in_shaft),
-    clear_screen,
+idz(n) :-
+    jestem_w(wentylacja),
+    moge_uciec,
+    \+ w_szybie,
+    retract(jestem_w(wentylacja)),
+    assert(jestem_w(szyb1)),
+    assert(w_szybie),
+    wyczysc_ekran,
     write('Wciskasz się do szybu wentylacyjnego. Jest ciasno i ciemno... użyj skrótów, by uciec.'), nl,
-    look, !.
+    rozejrzyj_sie, !.
 
-go(_) :-
-    clear_screen,
+idz(_) :-
+    wyczysc_ekran,
     write('Nie możesz tam iść.'), nl.
 
-/* Skróty */
-n :- go(n).
-s :- go(s).
-e :- go(e).
-w :- go(w).
+n :- idz(n).
+s :- idz(s).
+e :- idz(e).
+w :- idz(w).
 
-look :-
-        clear_screen,
-        i_am_at(Place),
-        describe(Place), nl,
-        notice_objects_at(Place), nl,
-        inventory, nl.
+rozejrzyj_sie :-
+        wyczysc_ekran,
+        jestem_w(Miejsce),
+        opis(Miejsce), nl,
+        obiekty_w_miejscu(Miejsce), nl,
+        ekwipunek, nl.
 
-notice_objects_at(Place) :-
-        at(X, Place),
+obiekty_w_miejscu(Miejsce) :-
+        znajduje_sie(X, Miejsce),
         write('Widzisz tutaj: '), write(X), write('.'), nl,
         fail.
-notice_objects_at(_).
+obiekty_w_miejscu(_).
 
-take(X) :-
-        clear_screen,
-        holding(X),
+wez(X) :-
+        wyczysc_ekran,
+        mam(X),
         write('Już to masz przy sobie!'), nl, !.
 
-take(X) :-
-        clear_screen,
-        i_am_at(Place),
-        at(X, Place),
-        retract(at(X, Place)),
-        assert(holding(X)),
+wez(X) :-
+        wyczysc_ekran,
+        jestem_w(Miejsce),
+        znajduje_sie(X, Miejsce),
+        retract(znajduje_sie(X, Miejsce)),
+        assert(mam(X)),
         write('Podniosłeś: '), write(X), write('.'), nl, !.
 
-take(_) :-
-        clear_screen,
+wez(_) :-
+        wyczysc_ekran,
         write('Tutaj nie ma takiego przedmiotu.'), nl.
 
-drop(X) :-
-        clear_screen,
-        holding(X),
-        i_am_at(Place),
-        retract(holding(X)),
-        assert(at(X, Place)),
+upusc(X) :-
+        wyczysc_ekran,
+        mam(X),
+        jestem_w(Miejsce),
+        retract(mam(X)),
+        assert(znajduje_sie(X, Miejsce)),
         write('Upuściłeś: '), write(X), write('.'), nl, !.
 
-drop(_) :-
-        clear_screen,
+upusc(_) :-
+        wyczysc_ekran,
         write('Nie masz tego przy sobie.'), nl.
 
-make_mannequin :-
-        holding(paint), holding(hair), holding(paper),
-        retract(holding(paint)),
-        retract(holding(hair)),
-        retract(holding(paper)),
-        assert(holding(mannequin)),
+zrob_manekina :-
+        mam(farba), mam(wlosy), mam(papier),
+        retract(mam(farba)),
+        retract(mam(wlosy)),
+        retract(mam(papier)),
+        assert(mam(manekin)),
         write('Stworzyłeś manekina!'), nl, !.
-make_mannequin :-
+zrob_manekina :-
         write('Brakuje Ci materiałów, by stworzyć manekina.'), nl.
 
-place_mannequin :-
-        i_am_at(bed_area), holding(mannequin),
-        retract(holding(mannequin)),
-        assert(at(mannequin, bed_area)),
+poloz_manekina :-
+        jestem_w(lozko), mam(manekin),
+        retract(mam(manekin)),
+        assert(znajduje_sie(manekin, lozko)),
         write('Położyłeś manekina na łóżku.'), nl, !.
-place_mannequin :-
-        i_am_at(bed_area),
+poloz_manekina :-
+        jestem_w(lozko),
         write('Nie masz manekina, żeby go położyć.'), nl, !.
-place_mannequin :-
-        write('Manekina można położyć tylko w miejscu łóżka.'), nl.
+poloz_manekina :-
+        write('Manekina można położyć tylko łóżku.'), nl.
 
-make_vent_mockup :-
-        holding(string), holding(wire), holding(cloth),
-        retract(holding(string)),
-        retract(holding(wire)),
-        retract(holding(cloth)),
-        assert(holding(ventilation_mockup)),
+zrob_atrape_wentylacji :-
+        mam(sznurek), mam(drut), mam(material),
+        retract(mam(sznurek)),
+        retract(mam(drut)),
+        retract(mam(material)),
+        assert(mam(atrapa_wentylacji)),
         write('Stworzyłeś atrapę wentylacji!'), nl, !.
-make_vent_mockup :-
+zrob_atrape_wentylacji :-
         write('Potrzebujesz sznurka, drutu i materiału, by zrobić atrapę.'), nl.
 
-place_vent_mockup :-
-    i_am_at(ventilation),
-    holding(ventilation_mockup),
-    ventilation_open,
-    retract(holding(ventilation_mockup)),
-    assert(at(ventilation_mockup, ventilation)),
+poloz_atrape :-
+    jestem_w(wentylacja),
+    mam(atrapa_wentylacji),
+    wentylacja_otwarta,
+    retract(mam(atrapa_wentylacji)),
+    assert(znajduje_sie(atrapa_wentylacji, wentylacja)),
     write('Umieściłeś atrapę wentylacji. Wygląda całkiem realistycznie... wpisz "n", aby uciec.'), nl, !.
-place_vent_mockup :-
-    i_am_at(ventilation),
-    \+ holding(ventilation_mockup),
-    write('Nie masz atrapy przy sobie.'), nl, !.
-place_vent_mockup :-
-    i_am_at(ventilation),
-    \+ ventilation_open,
-    write('Musisz najpierw rozwiercić prawdziwą wentylację.'), nl, !.
-place_vent_mockup :-
-    write('Musisz być przy wentylacji, aby umieścić atrapę.'), nl.
+poloz_atrape :- jestem_w(wentylacja), \+ mam(atrapa_wentylacji), write('Nie masz atrapy przy sobie.'), nl, !.
+poloz_atrape :- jestem_w(wentylacja), \+ wentylacja_otwarta, write('Musisz najpierw rozwiercić prawdziwą wentylację.'), nl, !.
+poloz_atrape :- write('Musisz być przy wentylacji, aby umieścić atrapę.'), nl.
 
-drill :-
-    i_am_at(ventilation),
-    (holding(knife); holding(spoon)),
-    (holding(knife), knife_uses(K), K < 3 -> retract(knife_uses(K)), K1 is K + 1, assert(knife_uses(K1)); true),
-    (holding(spoon), spoon_uses(S), S < 3 -> retract(spoon_uses(S)), S1 is S + 1, assert(spoon_uses(S1)); true),
-    (knife_uses(3), holding(knife) -> retract(holding(knife)), write('Nóż się złamał!'), nl; true),
-    (spoon_uses(3), holding(spoon) -> retract(holding(spoon)), write('Łyżka się złamała!'), nl; true),
-    (knife_uses(3), spoon_uses(3) ->
-        (ventilation_open -> true ; assert(ventilation_open)),
+wierc :-
+    jestem_w(wentylacja),
+    (mam(noz); mam(lyzka)),
+    (mam(noz), ilosc_uzyc_noza(K), K < 3 -> retract(ilosc_uzyc_noza(K)), K1 is K + 1, assert(ilosc_uzyc_noza(K1)); true),
+    (mam(lyzka), ilosc_uzyc_lyzki(S), S < 3 -> retract(ilosc_uzyc_lyzki(S)), S1 is S + 1, assert(ilosc_uzyc_lyzki(S1)); true),
+    (ilosc_uzyc_noza(3), mam(noz) -> retract(mam(noz)), write('Nóż się złamał!'), nl; true),
+    (ilosc_uzyc_lyzki(3), mam(lyzka) -> retract(mam(lyzka)), write('Łyżka się złamała!'), nl; true),
+    (ilosc_uzyc_noza(3), ilosc_uzyc_lyzki(3) ->
+        (wentylacja_otwarta -> true ; assert(wentylacja_otwarta)),
         write('Wentylacja została otwarta!'), nl
     ; write('Wciąż wiercisz...'), nl), !.
-drill :-
-    write('Potrzebujesz noża lub łyżki i musisz być przy wentylacji.'), nl.
+wierc :- write('Potrzebujesz noża lub łyżki i musisz być przy wentylacji.'), nl.
 
-unscrew :-
-    i_am_at(Location),
-    member(Location, [shaft3, shaft6, shaft10]),
-    holding(screwdriver),
-    bar_screws(Location, Count),
-    Count < 4,
-    NewCount is Count + 1,
-    retract(bar_screws(Location, Count)),
-    assert(bar_screws(Location, NewCount)),
-    (NewCount = 4 ->
-        assert(bar_removed(Location)),
+odkrec :-
+    jestem_w(Lokacja),
+    member(Lokacja, [szyb3, szyb6, szyb10]),
+    mam(srubokret),
+    sruby_kratki(Lokacja, Liczba),
+    Liczba < 4,
+    Nowa is Liczba + 1,
+    retract(sruby_kratki(Lokacja, Liczba)),
+    assert(sruby_kratki(Lokacja, Nowa)),
+    (Nowa = 4 ->
+        assert(kratka_usunieta(Lokacja)),
         write('Odkręciłeś ostatnią śrubę. Kratka jest usunięta!'), nl
     ;
-        write('Odkręciłeś śrubę. Zostało: '), write(4 - NewCount), nl
+        write('Odkręciłeś śrubę. Zostało: '), write(4 - Nowa), nl
     ), !.
-unscrew :-
-    i_am_at(Location),
-    member(Location, [shaft3, shaft6, shaft10]),
-    \+ holding(screwdriver),
-    write('Potrzebujesz śrubokręta.'), nl, !.
-unscrew :-
-    i_am_at(Location),
-    member(Location, [shaft3, shaft6, shaft10]),
-    bar_removed(Location),
-    write('Kratka już jest usunięta.'), nl, !.
-unscrew :-
-    write('Nie ma tu kratki do odkręcenia.'), nl.
+odkrec :- jestem_w(L), member(L, [szyb3, szyb6, szyb10]), \+ mam(srubokret), write('Potrzebujesz śrubokręta.'), nl, !.
+odkrec :- jestem_w(L), member(L, [szyb3, szyb6, szyb10]), kratka_usunieta(L), write('Kratka już jest usunięta.'), nl, !.
+odkrec :- write('Nie ma tu kratki do odkręcenia.'), nl.
 
-inventory :-
+ekwipunek :-
         write('Masz przy sobie: '), nl,
-        holding(X),
+        mam(X),
         write('- '), write(X), nl,
         fail.
-inventory :-
-        write('Na razie nic nie podniosłeś.'), nl.
+ekwipunek :- write('Na razie nic nie podniosłeś.'), nl.
 
-clear_screen :-
-        write('\e[H\e[2J').
+wyczysc_ekran :- write('\e[H\e[2J').
 
-describe(cage_center) :- write('Jesteś w centrum swojej celi. Xbierz ekwipunek do ucieczki.'), nl.
-describe(bed_area) :- write('Strefa łóżkowa. Może znajdziesz tu coś, z czego zrobisz manekina.'), nl.
-describe(toilet) :- write('Jesteś przy toalecie. Widzisz śrubokręt.'), nl.
-describe(storage) :- write('Magazynek. Znajdziesz tu narzędzia.'), nl.
-describe(south_area) :- write('Południowy zakątek. Są tu płaszcze przeciwdeszczowe i klej.'), nl.
-describe(ventilation) :- write('Stoisz przy kratce wentylacyjnej. Możliwe wyjście?'), nl.
-describe(sink) :- write('Zlew. Jest tu sznurek, drut i kawałek materiału.'), nl.
+opis(centrum_celi) :- write('Jesteś w centrum swojej celi. Zbierz ekwipunek do ucieczki.'), nl.
+opis(lozko) :- write('Strefa łóżkowa. Może znajdziesz tu coś, z czego zrobisz manekina?'), nl.
+opis(toaleta) :- write('Jesteś przy toalecie. Widzisz śrubokręt.'), nl.
+opis(magazynek) :- write('Magazynek. Znajdziesz tu narzędzia.'), nl.
+opis(poludnie) :- write('Południowy zakątek. Są tu płaszcze przeciwdeszczowe i klej.'), nl.
+opis(wentylacja) :- write('Stoisz przy kratce wentylacyjnej. Możliwe wyjście?'), nl.
+opis(zlew) :- write('Zlew. Jest tu sznurek, drut i kawałek materiału.'), nl.
 
-describe(shaft1) :- write('Wpełzasz do ciasnego kanału. Przed Tobą zakręt.'), nl.
-describe(shaft2) :- write('Bardzo ciasno. Możesz iść tylko naprzód.'), nl.
-describe(shaft3) :- ( bar_removed(shaft3) -> write('Kratka wschodnia usunięta. Można przejść.'), nl ; write('Kratka blokuje drogę na wschód.'), nl).
-describe(shaft4) :- write('Kanał schodzi w dół.'), nl.
-describe(shaft5) :- write('Dalej w dół...'), nl.
-describe(shaft6) :- ( bar_removed(shaft6) -> write('Wejście w górę wolne.'), nl ; write('Kratka blokuje wejście w górę.'), nl).
-describe(shaft7) :- write('Duszne, ciasne przejście. Trzeba iść dalej.'), nl.
-describe(shaft8) :- write('Coś słychać nad Tobą... już blisko?'), nl.
-describe(shaft9) :- write('Pachnie świeżym powietrzem!'), nl.
-describe(shaft10) :- ( bar_removed(shaft10) -> write('Kratka zdjęta. Można schodzić niżej.'), nl ; write('Kratka blokuje zejście.'), nl).
-describe(shaft11) :- write('Kanał skręca na zachód. To już prawie koniec.'), nl.
-describe(shaft12) :- write('Widzisz światło!'), nl.
+opis(szyb1) :- write('Wpełzasz do ciasnego kanału. Przed Tobą zakręt.'), nl.
+opis(szyb2) :- write('Bardzo ciasno. Możesz iść tylko naprzód.'), nl.
+opis(szyb3) :- (kratka_usunieta(szyb3) -> write('Kratka wschodnia usunięta. Można przejść.'), nl ; write('Kratka blokuje drogę na wschód.'), nl).
+opis(szyb4) :- write('Kanał schodzi w dół.'), nl.
+opis(szyb5) :- write('Dalej w dół...'), nl.
+opis(szyb6) :- (kratka_usunieta(szyb6) -> write('Wejście w górę wolne.'), nl ; write('Kratka blokuje wejście w górę.'), nl).
+opis(szyb7) :- write('Duszne, ciasne przejście. Trzeba iść dalej.'), nl.
+opis(szyb8) :- write('Coś słychać nad Tobą... już blisko?'), nl.
+opis(szyb9) :- write('Pachnie świeżym powietrzem!'), nl.
+opis(szyb10) :- (kratka_usunieta(szyb10) -> write('Kratka zdjęta. Można schodzić niżej.'), nl ; write('Kratka blokuje zejście.'), nl).
+opis(szyb11) :- write('Kanał skręca na zachód. To już prawie koniec.'), nl.
+opis(szyb12) :- write('Widzisz światło!'), nl.
 
-describe(roof) :- write('Udało Ci się wyjść na dach! Przed Tobą kable prowadzące w dół. Wciskaj s aby zejść na dół'), nl.
-describe(descent1) :- write('Zacząłeś schodzić po kablach. Ślisko, ale idzie.'), nl.
-describe(descent2) :- write('Jesteś na wysokości około 4. piętra. Trzymaj się mocno!'), nl.
-describe(descent3) :- write('Połowa drogi. Nie ma odwrotu...'), nl.
-describe(descent4) :- write('Już blisko ziemi. Nie puść się!'), nl.
-describe(descent5) :- write('Jeszcze kawałek... już prawie!'), nl.
-describe(ground) :-
-    write('Bezpiecznie dotarłeś na dół. Jesteś wolny!'), nl,
-    write(' Gratulacje — Uciekłeś z więzienia! '), nl,
-    halt.
+opis(dach) :- write('Udało Ci się wyjść na dach! Przed Tobą kable prowadzące w dół. Wciskaj "s", aby zejść na dół'), nl.
+opis(zejscie1) :- write('Zacząłeś schodzić po kablach. Ślisko, ale idzie.'), nl.
+opis(zejscie2) :- write('Jesteś na wysokości około 4. piętra. Trzymaj się mocno!'), nl.
+opis(zejscie3) :- write('Połowa drogi. Nie ma odwrotu...'), nl.
+opis(zejscie4) :- write('Już blisko ziemi. Nie puść się!'), nl.
+opis(zejscie5) :- write('Jeszcze kawałek... już prawie!'), nl.
+opis(ziemia) :- write('Bezpiecznie dotarłeś na dół. Jesteś wolny!'), nl, write(' Gratulacje — Uciekłeś z więzienia! '), nl, halt.
 
-can_escape :-
-    at(mannequin, bed_area),
-    ventilation_open,
-    at(ventilation_mockup, ventilation),
-    holding(screwdriver),
-    holding(raincoat),
-    holding(glue).
+moge_uciec :-
+    znajduje_sie(manekin, lozko),
+    wentylacja_otwarta,
+    znajduje_sie(atrapa_wentylacji, wentylacja),
+    mam(srubokret),
+    mam(plaszcz),
+    mam(klej).
 
-instructions :-
-        clear_screen,
-        write('Wpisuj komendy w składni Prologa.'), nl,
-        write('Dostępne komendy:'), nl,
+instrukcje :-
+        wyczysc_ekran,
+        write('Dostępne polecenia:'), nl,
         write('start.             -- rozpocznij grę'), nl,
         write('n. s. e. w.        -- poruszanie się'), nl,
-        write('take(Obiekt).      -- podnieś przedmiot'), nl,
-        write('drop(Obiekt).      -- upuść przedmiot'), nl,
-        write('make_mannequin.    -- stwórz manekina'), nl,
-        write('place_mannequin.   -- połóż manekina na łóżku'), nl,
-        write('make_vent_mockup.  -- zrób atrapę wentylacji'), nl,
-        write('place_vent_mockup. -- umieść atrapę'), nl,
-        write('drill.             -- rozwierć wentylację'), nl,
-        write('unscrew.           -- odkręć kratkę'), nl,
-        write('look.              -- rozejrzyj się'), nl,
-        write('inventory.         -- sprawdź ekwipunek'), nl,
-        write('instructions.      -- pokaż instrukcje'), nl,
-        write('halt.              -- zakończ grę'), nl, nl.
+        write('wez(Przedmiot).     -- podnieś przedmiot'), nl,
+        write('upusc(Przedmiot).   -- upuść przedmiot'), nl,
+        write('zrob_manekina.      -- stwórz manekina'), nl,
+        write('poloz_manekina.     -- połóż manekina'), nl,
+        write('zrob_atrape_wentylacji.  -- zrób atrapę wentylacji'), nl,
+        write('poloz_atrape.       -- umieść atrapę'), nl,
+        write('wierc.              -- rozwierć wentylację'), nl,
+        write('odkrec.             -- odkręć kratkę'), nl,
+        write('rozejrzyj_sie.      -- rozejrzyj się'), nl,
+        write('ekwipunek.          -- sprawdź ekwipunek'), nl,
+        write('instrukcje.         -- pokaż instrukcje'), nl,
+        write('halt.               -- zakończ grę'), nl, nl.
 
-start :- instructions, look.
+start :- instrukcje, rozejrzyj_sie.
