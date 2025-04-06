@@ -317,6 +317,7 @@ reset_game :-
     abolish(n/0),
     abolish(e/0),
     abolish(w/0),
+    abolish(s/0),
     abolish(rozejrzyj_sie/0),
     abolish(obiekty_w_miejscu/1),
     abolish(wez/1),
