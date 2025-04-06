@@ -6,23 +6,34 @@ lokacja(pralnia, 'Jesteś w pralni.').
 lokacja(spacerniak, 'Jesteś na spacerniaku.').
 lokacja(stolowka, 'Jesteś na więziennej stołówce.').
 
-:- dynamic postac_w/2, pozycja_gracza/1, przedmiot_w/2, wykonane/1.
+:- dynamic ekwipunek/1, kwestia/2, postac_w/2, pozycja_gracza/1, przedmiot_w/2.
+
+akcja_uzycia(pamietnik) :-
+    Do_ucieczki = [
+        'sztućce',
+        'płaszcze przeciwdeszczorwe',
+        'silnik od odkurzacza',
+        'broń',
+        'ubrania na zmiane',
+        'kontakt poza więzieniem'
+    ],
+    write('Potrzebne do ucieczki:'), nl,
+    forall(member(Tekst, Do_ucieczki),
+      (write('- '), write(Tekst), nl)).
+
+daj(red, atlas) :-
+    ekwipunek(atlas),
+    retract(ekwipunek(atlas)),
+    retractall(kwestia(red, _)),
+    assertz(kwestia(red, 'Super, dzięki za atlas! Sprawę kontaktu możesz uznać za załatwioną.'))
 
 dialog(Postac, Tekst) :-
     ansi_format([fg(cyan), bold], '~w: ', [Postac]),
     ansi_format([fg(white)], '~w~n', [Tekst]).
 
-dialog_postaci(red) :-
-    dialog('Red', 'Widzisz Andy...').
-
-dialog_postaci(bibliotekarz) :-
-    dialog('Bibliotekarz', 'Ciii... Próbuję się skupić na tej książcę o relacyjnych bazach danych.').
-
-dialog_postaci(klawisz) :-
-    dialog('Klawisz', 'Nie masz dziś zmiany w pralni? Lepiej się pośpiesz!').
-
-dialog_postaci(kucharz) :-
-    dialog('Kucharz', 'To co zwykle?').
+dialog_postaci(Postac) :-
+    kwestia(Postac, Tekst),
+    dialog(Postac, Tekst).
 
 dialog_sad :-
     nl,
@@ -52,6 +63,7 @@ instrukcje :-
     write('mapa                 -- wyświetl mapę więzienia.'), nl,
     write('porozmawiaj(imie)    -- rozpocznij rozmowę z postacią w tej lokacji'), nl,
     write('rozejrzyj            -- rozejrzyj się dookoła.'), nl,
+    write('uzyj(przedmiot)      -- spróbuj skorzystać z przedmiotu w ekwipunku'), nl,
     write('wez(przedmiot)       -- weź przedmiot z aktualnej lokacji.'), nl,
     write('halt                 -- zakończ rozgrywkę i wyjdź.'), nl,
     nl.
@@ -94,7 +106,10 @@ start_przedmioty :-
     retractall(przedmiot_w(_, _)),
     assertz(przedmiot_w(atlas, biblioteka)),
     assertz(przedmiot_w(sztucce, stolowka)),
-    assertz(przedmiot_w(ubrania, pralnia)).
+    assertz(przedmiot_w(ubrania, pralnia)),
+    assertz(przedmiot_w(klej, biblioteka)),
+    assertz(przedmiot_w(pamietnik, cela)),
+    assertz(przedmiot_w(plaszcze, pralnia)).
 
 start_postacie :-
     retractall(postac_w(_, _)),
@@ -102,6 +117,20 @@ start_postacie :-
     assertz(postac_w(red, spacerniak)),
     assertz(postac_w(klawisz, pralnia)),
     assertz(postac_w(kucharz, stolowka)).
+
+start_rozmowy :-
+    retractall(kwestia(_, _)),
+    assertz(kwestia('Red', 'Czyli próbujesz uciec i potrzebujesz kogoś na zewnątrz do pomocy? Znajdź mi w bibliotece atlas, a w zamian zobaczę co da się zrobić.')),
+    assertz(kwestia('Bibliotekarz', 'Ciii... Próbuję się skupić na tej książcę o relacyjnych bazach danych.')),
+    assertz(kwestia('Klawisz', 'Nie masz dziś zmiany w pralni? Lepiej się pośpiesz!')),
+    assertz(kwestia('Kucharz', 'To co zwykle?')),.
+
+uzyj(Przedmiot) :-
+    ekwipunek(Przedmiot),
+    akcja_uzycia(Przedmiot), !.
+
+uzyj(Przedmiot) :-
+    ansi_format([fg(red)], 'Nie masz przedmiotu: ~w~n', [Przedmiot]).
 
 wez(Przedmiot) :-
     pozycja_gracza(Miejsce),
