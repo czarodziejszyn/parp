@@ -251,19 +251,20 @@ sprawdz_czas :-
 finish :-
     nl,
     % write('Gra dobiegła końca, wpisz halt. by wyjść'),
-    ansi_format([fg(blue)], 'Gra dobiegła końca, wpisz halt. by wyjść.~n', []),
+    % ansi_format([fg(blue)], 'Gra dobiegła końca, wpisz halt. by wyjść.~n', []),
     % nl,
     retractall(at(_, _)), retractall(i_am_at(_)), retractall(alive(_)), retractall(fence_can_cross), retractall(warned(_)), retractall(guards_at(_)), retractall(can_go_on_water),
     assert(guards_at(docks)),
     retractall(time_left(_)),
     assert(time_left(5)),
     assert(holding(ponton)), assert(holding(bron)), assert(know(friend)), assert(know(blindspot)),assert(holding(ubrania)),
-    assert(i_am_at(wall)).
+    assert(i_am_at(wall)),
+    halt.
 
 instrukcje :-
     nl,
     write('Dostępne komendy:'), nl,
-    write('start.                   -- aby zacząć grę.'), nl,
+    write('start.                   -- rozpocznij rozgrywkę.')
     write('n.  s.  e.  w.           -- aby pójść w danym kierunku.'), nl,
     write('wez(przedmiot).          -- to pick up an object.'), nl,
     write('upusc(przedmiot).        -- to put down an object.'), nl,
@@ -330,8 +331,8 @@ opisz(beach) :-
         (holding(ponton); holding(bron))
         ->(
             holding(ponton)
-            -> ansi_format([fg(cyan)],"Masz przygotowany improwizowany ponton.~n", []),
-            ansi_format([fg(cyan)],"Wystarczy go tylko napompować i odpłynąć.~n", []), !
+            -> ansi_format([fg(green)],"Masz przygotowany improwizowany ponton.~n", []),
+            ansi_format([fg(green)],"Wystarczy go tylko napompować i odpłynąć.~n", []), !
             ; nl,!
         ),
         (

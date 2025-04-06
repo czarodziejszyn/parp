@@ -357,4 +357,6 @@ reset_game_1 :-
     abolish(mapa/0),
     abolish(start/0),
 
+    write('Udało ci się zejść z dachu więzienia, czas na ostatni etap ucieczki. Nowe instrukcje dostępne sa po wpisaniu komendy: "instrukcje."\n'),
+
     consult('escape_island.pl').
