@@ -4,7 +4,7 @@
 :- assert(guards_at(docks)).
 /* carry ober from prev stages */
 /* float, weapon, clothes, know(friend) from outside*/
- :- assert(holding(float)), assert(holding(weapon)), assert(know(friend)).
+ :- assert(holding(float)), assert(holding(weapon)), assert(know(friend)), assert(know(blindspot)).
 /* :- retractall(holding(_)), retractall(know(_)). */
 
 /* map out area */
@@ -16,6 +16,8 @@ path(fence, n, wall).
 
 path(fence, s, beach).
 path(beach, n, fence).
+path(fence, e, blindspot).
+path(blindspot, s, beach).
 
 path(beach, s, sea).
 path(beach, w, docks).
@@ -54,7 +56,7 @@ go(Direction) :-
         path(Here, Direction, There),
         (
         i_am_at(fence)
-        -> determine(fence),!
+        -> determine(fence, Direction),!
         ; i_am_at(docks)
         -> determine(docks), !
         ; (
@@ -113,8 +115,9 @@ wait_at(_) :-
         write("zmarnowałeś nieco czasu"),nl.
 
 
-determine(fence) :-
-        (
+determine(fence, Direction) :-
+        s = Direction
+        ->(
                 fence_can_cross
                 -> cross_fence(waited)
                 ;(
@@ -122,7 +125,16 @@ determine(fence) :-
                         -> die(fence),!
                         ; warn_about(fence),!
                 ),!
-        ),!.
+        ),!
+        ;(
+                know(blindspot)
+                -> retract(i_am_at(fence)),
+                assert(i_am_at(blindspot)),
+                write("Ostrożnie poruszasz się przy murze więzienia dopóki nie znajdziesz się w okolicy o której słyszałeś."),nl,
+                write("Rzeczywiście, reflektory omijają to miejsce! "), nl,
+                write("Spokojnie możesz tu przekroczyć płot i udać się na południe, na plażę.")
+                ;write('Nie ma tam przejścia.')
+        ).
 
 determine(docks) :-
         (
@@ -206,12 +218,9 @@ instructions :-
         write('Available commands are:'), nl,
         write('start.             -- aby zacząć grę.'), nl,
         write('n.  s.  e.  w.     -- aby pójść w danym kierunku.'), nl,
-        /*
         write('take(Object).      -- to pick up an object.'), nl,
         write('drop(Object).      -- to put down an object.'), nl,
-        */
         write("use(Object)        -- to use object from inventory."), nl,
-
         write("wait.              -- aby zaczekać na korzystniejszy moment do działania"), nl,
         write('look.              -- aby ponownie się rozejrzeć.'), nl,
         write('instructions.      -- aby ponownie wyświetlić tą wiadomość.'), nl,
@@ -243,7 +252,14 @@ describe(fence) :-
         write("Sam drut byłby dość nieprzyjemną przeszkodą ale wizja dostania kulką powoduje konieczność przemyślanego podejścia do problemu."), nl, nl,
         write("Ale najpierw musisz przedostać się przez płot."), nl, nl,
         write("Reflektory obracają się w stałym tempie. Ich droga jest przewidywalna."), nl,
-        write("Jeśli spędzisz trochę czasu, znajdziesz moment kiedy nikt nie patrzy na tak kawałek płotu dość długo by się przeprawić."), nl, nl,
+        write("Jeśli spędzisz trochę czasu, znajdziesz moment kiedy nikt nie patrzy na tak kawałek płotu dość długo by się przeprawić."), nl,
+        (
+                know(blindspot)
+                -> nl, write("Słyszałeś o miejscu, którego nie dosięgają reflektory."), nl,
+                write("Jeśli udało buy ci się je znaleźć to drut nie powinien sprawiać większych kłopotów."), nl,
+                write("Powinno być gdzieś na wschód..."),nl,nl
+                ; nl
+        ),
         write("Na południu znajduje sie plaża"), nl
         ).
 
@@ -268,7 +284,7 @@ describe(beach) :-
                         ; nl,!
                 ),!
                 ; write("Nie masz niczego co pomogło by wam przeprawic się przez wody zatoki. Chyba nie przemyślałeś tego planu za dobrze."), nl,
-                write("Pozostaje ci spróbować płynąc wpław..."), nl,nl,!
+                write("Pozostaje ci szukać szczesliwego trafu..."), nl,nl,!
         ),
         write("Na zachód - doki, na północ ogrodzenie"),nl,
         !.
