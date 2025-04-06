@@ -213,7 +213,7 @@ uzyj(Przedmiot) :-
     akcja_uzycia(Przedmiot), !.
 
 uzyj(Przedmiot) :-
-    ansi_format([fg(red)], 'Nie masz przedmiotu: ~w~n', [Przedmiot]), !.
+    ansi_format([fg(red)], 'Nie masz albo nie możesz użyć przedmiotu: ~w~n', [Przedmiot]), !.
 
 wez(atlas) :-
     pozycja_gracza(biblioteka),
