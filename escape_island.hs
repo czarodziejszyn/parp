@@ -25,6 +25,13 @@ data State = State {
 
 -- end state --
 
+
+opisDispatcher state =
+    opis lokacja
+    where
+        lokacja = location state
+
+opis :: String -> IO ()
 opis "mur" = do
     printYellow ["Po dłużącym się zejściu z radością witasz grunt pod stopami."]
     printYellow ["Mimo, że mury więzienia już masz za sobą, do pokonania została jeszcze bariera z drutu kolczastego i wody zatoki San Francisco.\n"]
@@ -42,9 +49,17 @@ opis "blindspot" = do
     printBlue ["Spokojnie możesz tu przekroczyć płot i udać się na południe, na plażę."]
 
 
---main = do
---    let initState = State {
---        location = "mur",
---        inventory = ["ponton"],
---    }
---    opis location initState
+
+gameLoop state = do
+    opisDispatcher state
+--    let next_state = State "blindspot" ["ponton"]
+--    gameLoop next_state
+
+
+main = do
+    let initState = State {
+        location = "mur",
+        inventory = ["ponton"]
+    }
+    printGreen ["loaded \n"]
+    gameLoop initState
