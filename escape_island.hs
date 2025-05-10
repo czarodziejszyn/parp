@@ -32,7 +32,8 @@ data State = State {
     inventory :: [String],
     canWater :: Bool,
     canFence :: Bool,
-    guardsPresent :: Bool
+    guardsPresent :: Bool,
+    time :: Int
 }
 
 -- move
@@ -44,6 +45,11 @@ move from dir = do
 
 idz state dir = state {location = move (location state) dir}
     --let location = location state
+
+
+-- time
+
+deductTime state t = state{time  = (time state) -t}
 
 -- inventory
 
@@ -118,7 +124,8 @@ main = do
         inventory = ["ponton"],
         canWater = False,
         canFence = False,
-        guardsPresent = True
+        guardsPresent = True,
+        time = 5
     }
     printGreen ["loaded \n"]
     gameLoop initState
