@@ -5,7 +5,7 @@ import Data.List (isPrefixOf)
 type Lokacja = String
 type Kierunek = String
 type Przedmiot = String
-type StanGry = (Lokacja, [(Przedmiot, Lokacja)], [Przedmiot])
+type StanGry = (Lokacja, [(Przedmiot, Lokacja)], [Przedmiot], Int, Int)
 type Gra a = StateT StanGry IO a
 
 tekstInstrukcji :: [String]
@@ -112,8 +112,26 @@ sciezki =
   , ("krata wentylacyjna", "w", "magazyn")
   , ("toaleta", "w", "zlew")
   , ("zlew", "e", "toaleta")
+  , ("krata wentylacyjna", "n", "szyb1")
+  , ("szyb1", "n", "szyb2")
+  , ("szyb2", "e", "szyb3")
+  , ("szyb3", "e", "szyb4")
+  , ("szyb4", "s", "szyb5")
+  , ("szyb5", "s", "szyb6")
+  , ("szyb6", "n", "szyb7")
+  , ("szyb7", "n", "szyb8")
+  , ("szyb8", "n", "szyb9")
+  , ("szyb9", "n", "szyb10")
+  , ("szyb10", "s", "szyb11")
+  , ("szyb11", "w", "szyb12")
+  , ("szyb12", "n", "dach")
   ]
 
+spelnioneWarunkiUcieczki :: StanGry -> Bool
+spelnioneWarunkiUcieczki (lok, ps, eq, _, _) =
+  ("manekin", "lozko") `elem` ps &&
+  ("atrapa_wentylacji", "krata wentylacyjna") `elem` ps &&
+  all (`elem` eq) ["srubokret", "plaszcz", "klej"]
 znajdzPrzejscie :: Lokacja -> Kierunek -> Maybe Lokacja
 znajdzPrzejscie skad kierunek = znajdz sciezki
   where
@@ -127,15 +145,20 @@ znajdzPrzejscie skad kierunek = znajdz sciezki
 wykonajKomende :: String -> Gra ()
 wykonajKomende wejscie
   | wejscie `elem` ["n", "s", "e", "w"] = do
-      (lok, ps, eq) <- get
+      (lok, ps, eq, nozUzycia, lyzkaUzycia)  <- get
       case znajdzPrzejscie lok wejscie of
         Just nowaLokacja -> do
-          put (nowaLokacja, ps, eq)
-          liftIO $ putStrLn $ "Idziesz na " ++ wejscie ++ " -> " ++ nowaLokacja
-          liftIO $ opis nowaLokacja 
+          if lok == "krata wentylacyjna" && wejscie == "n" && spelnioneWarunkiUcieczki (lok, ps, eq, nozUzycia, lyzkaUzycia)
+            then do
+              liftIO $ printGreen ["Udało Ci się uciec! Gratulacje!"]
+              liftIO $ putStrLn "Koniec gry."
+            else do
+              put (nowaLokacja, ps, eq, nozUzycia, lyzkaUzycia)
+              liftIO $ putStrLn $ "Idziesz na " ++ wejscie ++ " -> " ++ nowaLokacja
+              liftIO $ opis nowaLokacja 
         Nothing -> liftIO $ putStrLn "Nie ma przejścia w tym kierunku."
   | wejscie == "rozejrzyj" = do
-      (lok, przedmioty, _) <- get
+      (lok, przedmioty, _, nozUzycia, lyzkaUzycia) <- get
       let lokalne = [p | (p, l) <- przedmioty, l == lok]
       liftIO $ putStrLn $ "Jesteś w: " ++ lok
       liftIO $ opis lok
@@ -145,29 +168,110 @@ wykonajKomende wejscie
   | wejscie == "instrukcje" = liftIO instrukcje
   | wejscie == "mapa" = liftIO mapa
   | wejscie == "ekwipunek" = do
-      (_, _, eq) <- get
+      (_, _, eq, nozUzycia, lyzkaUzycia) <- get
       if null eq
         then liftIO $ putStrLn "Twój ekwipunek jest pusty."
         else liftIO $ putStrLn $ "Ekwipunek: " ++ unwords eq
   | "wez " `isPrefixOf` wejscie =
     let przedmiot = drop 4 wejscie in do
-      (lok, przedmioty, eq) <- get
+      (lok, przedmioty, eq, nozUzycia, lyzkaUzycia) <- get
       if (przedmiot, lok) `elem` przedmioty
         then do
           let nowePrzedmioty = filter (/= (przedmiot, lok)) przedmioty
-          put (lok, nowePrzedmioty, przedmiot:eq)
+          put (lok, nowePrzedmioty, przedmiot:eq, nozUzycia, lyzkaUzycia)
           liftIO $ putStrLn $ "Podnosisz " ++ przedmiot ++ "."
         else liftIO $ putStrLn "Nie ma tu takiego przedmiotu."
 
  | "upusc " `isPrefixOf` wejscie =
   let przedmiot = drop 6 wejscie in do
-    (lok, przedmioty, eq) <- get
+    (lok, przedmioty, eq, nozUzycia, lyzkaUzycia) <- get
     if przedmiot `elem` eq
       then do
         let nowyEq = filter (/= przedmiot) eq
-        put (lok, (przedmiot, lok):przedmioty, nowyEq)
+        put (lok, (przedmiot, lok):przedmioty, nowyEq, nozUzycia, lyzkaUzycia)
         liftIO $ putStrLn $ "Upuszczasz " ++ przedmiot ++ "."
       else liftIO $ putStrLn "Nie masz takiego przedmiotu."
+
+    | wejscie == "zrob_manekina" = do
+      (lok, ps, eq, nozUzycia, lyzkaUzycia) <- get
+      if all (`elem` eq) ["farba", "wlosy", "papier"]
+        then do
+          let eq' = filter (`notElem` ["farba", "wlosy", "papier"]) eq
+          put (lok, ps, "manekin" : eq', nozUzycia, lyzkaUzycia)
+          liftIO $ printRed ["Stworzyłeś manekina!"]
+        else liftIO $ printYellow ["Brakuje Ci materiałów, by stworzyć manekina."]
+
+  | wejscie == "poloz_manekina" = do
+      (lok, ps, eq, nozUzycia, lyzkaUzycia) <- get
+      if lok == "lozko"
+        then if "manekin" `elem` eq
+          then do
+            let eq' = filter (/= "manekin") eq
+            put (lok, ("manekin", lok):ps, eq', nozUzycia, lyzkaUzycia)
+            liftIO $ printBlue ["Położyłeś manekina na łóżku."]
+          else liftIO $ printYellow ["Nie masz manekina, żeby go położyć."]
+        else liftIO $ printYellow ["Manekina można położyć tylko na łóżku."]
+      | wejscie == "zrob_atrape" = do
+      (lok, ps, eq, nozUzycia, lyzkaUzycia) <- get
+      if all (`elem` eq) ["sznurek", "drut", "material"]
+        then do
+          let eq' = filter (`notElem` ["sznurek", "drut", "material"]) eq
+          put (lok, ps, "atrapa_wentylacji" : eq', nozUzycia, lyzkaUzycia)
+          liftIO $ printRed ["Stworzyłeś atrapę wentylacji!"]
+        else liftIO $ printYellow ["Potrzebujesz sznurka, drutu i materiału, by zrobić atrapę."]
+
+  | wejscie == "poloz_atrape" = do
+      (lok, ps, eq, nozUzycia, lyzkaUzycia) <- get
+      if lok /= "krata wentylacyjna"
+        then liftIO $ printYellow ["Musisz być przy wentylacji, aby umieścić atrapę."]
+      else if not ("atrapa_wentylacji" `elem` eq)
+        then liftIO $ printYellow ["Nie masz atrapy przy sobie."]
+      else if not (("krata_otwarta", lok) `elem` ps)
+        then liftIO $ printYellow ["Musisz najpierw rozwiercić prawdziwą wentylację."]
+      else do
+        let eq' = filter (/= "atrapa_wentylacji") eq
+        put (lok, ("atrapa_wentylacji", lok):ps, eq', nozUzycia, lyzkaUzycia)
+        liftIO $ printRed ["Założono atrapę wentylacji. Wygląda całkiem realistycznie... wpisz \"n\", aby uciec."]
+       | wejscie == "wierc" = do
+      (lok, ps, eq, nozUzycia, lyzkaUzycia) <- get
+      if lok /= "krata wentylacyjna"
+        then liftIO $ printYellow ["Musisz być przy wentylacji."]
+      else if not ("noz" `elem` eq || "lyzka" `elem` eq)
+        then liftIO $ printYellow ["Potrzebujesz noża lub łyżki, żeby wiercić."]
+      else do
+        let (nozUzycia', eqNoz) =
+              if "noz" `elem` eq then
+                let k = nozUzycia + 1 in
+                if k >= 3
+                  then (k, filter (/= "noz") eq)
+                  else (k, eq)
+              else (nozUzycia, eq)
+
+        let (lyzkaUzycia', eqLyzka) =
+              if "lyzka" `elem` eq then
+                let s = lyzkaUzycia + 1 in
+                if s >= 3
+                  then (s, filter (/= "lyzka") eqNoz)
+                  else (s, eqNoz)
+              else (lyzkaUzycia, eqNoz)
+
+        put (lok, ps, eqLyzka, nozUzycia', lyzkaUzycia')
+
+        if "noz" `elem` eq && nozUzycia' >= 3
+          then liftIO $ printYellow ["Nóż się złamał!"]
+          else return ()
+
+        if "lyzka" `elem` eq && lyzkaUzycia' >= 3
+          then liftIO $ printYellow ["Łyżka się złamała!"]
+          else return ()
+
+        if nozUzycia' >= 3 && lyzkaUzycia' >= 3
+          then do
+            put (lok, ("krata_otwarta", lok) : ps, eqLyzka, nozUzycia', lyzkaUzycia')
+            liftIO $ printRed ["Wentylacja została otwarta!"]
+          else liftIO $ printYellow ["Wierć dalej..."]
+
+
   | wejscie == "wyjscie" = liftIO $ putStrLn "Zakończono grę."
   | otherwise = liftIO $ putStrLn "Nie rozumiem polecenia."
 
@@ -195,6 +299,7 @@ main = do
         , ("sznurek", "zlew")
         , ("drut", "zlew")
         , ("material", "zlew")
-        ], [])
+        ], [], 0, 0) 
+
   opis "srodek celi"
   evalStateT petla poczatkowyStan
