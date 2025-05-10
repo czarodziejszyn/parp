@@ -112,7 +112,6 @@ sciezki =
   , ("krata wentylacyjna", "w", "magazyn")
   , ("toaleta", "w", "zlew")
   , ("zlew", "e", "toaleta")
-  , ("krata wentylacyjna", "n", "szyb1")
   , ("szyb1", "n", "szyb2")
   , ("szyb2", "e", "szyb3")
   , ("szyb3", "e", "szyb4")
@@ -132,27 +131,30 @@ spelnioneWarunkiUcieczki (lok, ps, eq, _, _) =
   ("manekin", "lozko") `elem` ps &&
   ("atrapa_wentylacji", "krata wentylacyjna") `elem` ps &&
   all (`elem` eq) ["srubokret", "plaszcz", "klej"]
-znajdzPrzejscie :: Lokacja -> Kierunek -> Maybe Lokacja
-znajdzPrzejscie skad kierunek = znajdz sciezki
+
+znajdzPrzejscie :: Lokacja -> Kierunek -> StanGry -> Maybe Lokacja
+znajdzPrzejscie "krata wentylacyjna" "n" stan
+  | spelnioneWarunkiUcieczki stan = Just "szyb1"
+  | otherwise = Nothing
+znajdzPrzejscie skad kierunek _ =
+  znajdz sciezki
   where
     znajdz [] = Nothing
     znajdz ((z, k, d):xs)
       | z == skad && k == kierunek = Just d
-      | otherwise = znajdz xs
-
+      | otherwise                  = znajdz xs
 
     
 wykonajKomende :: String -> Gra ()
 wykonajKomende wejscie
   | wejscie `elem` ["n", "s", "e", "w"] = do
       (lok, ps, eq, nozUzycia, lyzkaUzycia)  <- get
-      case znajdzPrzejscie lok wejscie of
+      case znajdzPrzejscie lok wejscie (lok, ps, eq, nozUzycia, lyzkaUzycia) of
         Just nowaLokacja -> do
-          if lok == "krata wentylacyjna" && wejscie == "n" && spelnioneWarunkiUcieczki (lok, ps, eq, nozUzycia, lyzkaUzycia)
-            then do
-              liftIO $ printGreen ["Udało Ci się uciec! Gratulacje!"]
-              liftIO $ putStrLn "Koniec gry."
-            else do
+              liftIO $ printGreen [lok]
+              liftIO $ printGreen [wejscie]
+              liftIO $ print (spelnioneWarunkiUcieczki (lok, ps, eq, nozUzycia, lyzkaUzycia))
+              
               put (nowaLokacja, ps, eq, nozUzycia, lyzkaUzycia)
               liftIO $ putStrLn $ "Idziesz na " ++ wejscie ++ " -> " ++ nowaLokacja
               liftIO $ opis nowaLokacja 
@@ -267,8 +269,8 @@ wykonajKomende wejscie
 
         if nozUzycia' >= 3 && lyzkaUzycia' >= 3
           then do
-            put (lok, ("krata_otwarta", lok) : ps, eqLyzka, nozUzycia', lyzkaUzycia')
-            liftIO $ printRed ["Wentylacja została otwarta!"]
+                    put (lok, ("krata_otwarta", lok) : ps, eqLyzka, nozUzycia', lyzkaUzycia')
+                    liftIO $ printRed ["Wentylacja została otwarta!"]
           else liftIO $ printYellow ["Wierć dalej..."]
 
 
