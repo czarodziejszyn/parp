@@ -1,5 +1,6 @@
 import qualified Data.HashMap.Strict as HM
 
+
 -- common --
 
 
@@ -22,7 +23,25 @@ printGreen text = putStr $ "\x1b[32m" ++ unlines text ++ "\x1b[0m"
 paths :: HM.HashMap (String, String) String
 paths = HM.fromList [
     (("wall", "S"), "fence"),
-    (("fence", "N"), "wall")
+
+    (("fence", "N"), "wall"),
+    (("fence", "S"), "beach"),
+    (("fence", "E"), "blindspot"),
+
+    (("blindspot", "S"), "beach"),
+
+    (("beach", "W"), "docks"),
+    (("beach", "S"), "sea"),
+
+    (("docks", "E"), "beach"),
+    (("docks", "S"), "sea"),
+
+    (("sea", "S"), "city"),
+    (("sea", "W"), "shore"),
+    (("sea", "E"), "island"),
+
+    (("city", "car"), "car_ending"),
+    (("city", "bus"), "bus_ending")
     ]
 
 -- state --
@@ -51,25 +70,30 @@ idz state dir = state {location = move (location state) dir}
 
 deductTime state t = state{time  = (time state) -t}
 
--- inventory
-
-checkInventory state item = elem item (inventory state)
-
--- działa
---pickUp :: State -> String -> State
---pickUp state item =
---    state {inventory = temp}
---    where
---        temp = item: inventory state
-
--- nie działa
---drop state item =
---    state {inventory = temp}
---    where
---        temp = List.delete item (inventory state)
+sprawdzCzas state = do
+    let hours = time state
+    if hours <= 0 then do
+        printRed ["Słońce wyłoniło się już w pełni nad horyzont. Wiesz, że o tej porze w więzieniu jest pobudka."]
+        printRed ["Z gmachu więzienia wydobywa się wycie syren. Wiedzą o twojej uciecze i mają cię jak na dłoni..."]
+        printRed ["Przynajmniej spróbowałeś ..."]
+    else if hours == 5 then do
+        printRed ["Zostało ci 5 godzin"]
+    else if hours == 1 then do
+        printRed ["Horyzont zaczyna odmieniać niewyraźna łuna światła."]
+        printRed ["Za niespełna godzinę straznicy odkryją twoją ucieczkę, ale ty będziesz wtedy już daleko... racja?"]
+    else do
+        printRed ["Zostały ci " ++ show hours ++ " godziny!"]
 
 
-opisDispatcher state =
+-- rozejrzyj
+
+rozejrzyj :: State -> IO()
+rozejrzyj state = do
+    opisz state
+    sprawdzCzas state
+
+opisz :: State -> IO()
+opisz state =
     opis lokacja state
     where
         lokacja = location state
@@ -111,7 +135,7 @@ readCmd = do
 
 gameLoop :: State -> IO()
 gameLoop state = do
-    opisDispatcher state
+    opisz state
     cmd <- readCmd
     printRed [cmd]
     -- let next_state = state{}
@@ -131,4 +155,4 @@ main = do
     gameLoop initState
 
 
--- initState = State{location = "wall",inventory = ["ponton"],canWater = False,canFence = False,guardsPresent = True}
+-- initState = State{location = "wall",inventory = ["ponton"],canWater = False,canFence = False,guardsPresent = True, time = 5}
