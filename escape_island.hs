@@ -19,7 +19,7 @@ printGreen text = putStr $ "\x1b[32m" ++ unlines text ++ "\x1b[0m"
 -- state --
 
 data State = State {
-    location :: String
+    location :: String,
     inventory :: [String]
 }
 
@@ -40,3 +40,11 @@ opis "blindspot" = do
     printYellow ["Rzeczywiście, reflektory omijają to miejsce! \n"]
     printYellow ["Spokojnie możesz tu przekroczyć płot i udać się na południe, na plażę.\n"]
     printBlue ["Spokojnie możesz tu przekroczyć płot i udać się na południe, na plażę."]
+
+
+--main = do
+--    let initState = State {
+--        location = "mur",
+--        inventory = ["ponton"],
+--    }
+--    opis location initState
