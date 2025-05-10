@@ -16,4 +16,9 @@ printGreen text = putStr $ "\x1b[32m" ++ unlines text ++ "\x1b[0m"
 
 -- end common --
 
-opis :: String -> IO ()
+opis "mur" = do
+    printYellow ["Po dłużącym się zejściu z radością witasz grunt pod stopami."]
+    printYellow ["Mimo, że mury więzienia już masz za sobą, do pokonania została jeszcze bariera z drutu kolczastego i wody zatoki San Francisco.\n"]
+    printYellow ["Noc niedługo się skończy, a wraz z nią twoja szansa na ucieczkę. "]
+    printYellow ["Wiesz, że nie masz za dużo czasu.\n"]
+    printBlue ["Na południe od ciebie znajduje się ogrodzenie z drutu."]
