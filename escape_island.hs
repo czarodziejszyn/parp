@@ -18,9 +18,10 @@ printGreen text = putStr $ "\x1b[32m" ++ unlines text ++ "\x1b[0m"
 
 -- state --
 
--- time
-
--- inventory
+data State = State {
+    location :: String
+    inventory :: [String]
+}
 
 -- end state --
 
