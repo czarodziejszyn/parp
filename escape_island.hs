@@ -29,7 +29,10 @@ paths = HM.fromList [
 
 data State = State {
     location :: String,
-    inventory :: [String]
+    inventory :: [String],
+    canWater :: Bool,
+    canFence :: Bool,
+    guardsPresent :: Bool
 }
 
 -- move
@@ -46,24 +49,50 @@ idz state dir = state {location = move (location state) dir}
 
 checkInventory state item = elem item (inventory state)
 
+-- działa
+--pickUp :: State -> String -> State
+--pickUp state item =
+--    state {inventory = temp}
+--    where
+--        temp = item: inventory state
+
+-- nie działa
+--drop state item =
+--    state {inventory = temp}
+--    where
+--        temp = List.delete item (inventory state)
+
 
 opisDispatcher state =
-    opis lokacja
+    opis lokacja state
     where
         lokacja = location state
 
-opis :: String -> IO ()
-opis "wall" = do
+opis :: String -> State -> IO ()
+opis "wall" _ = do
     printYellow ["Po dłużącym się zejściu z radością witasz grunt pod stopami."]
     printYellow ["Mimo, że mury więzienia już masz za sobą, do pokonania została jeszcze bariera z drutu kolczastego i wody zatoki San Francisco.\n"]
     printYellow ["Noc niedługo się skończy, a wraz z nią twoja szansa na ucieczkę. "]
     printYellow ["Wiesz, że nie masz za dużo czasu.\n"]
     printBlue ["Na południe od ciebie znajduje się ogrodzenie z drutu."]
 
--- opis "fence"  = do
---    printYellow ["]
+opis "fence" state  = do
+    printYellow ["Przed tobą znajduje się bariera wykonana z drutu kolczastego otaczająca budynek więzienny."]
+    printYellow ["Teren wokół niej przeszukują reflektory. Wiesz, że jak cię zobaczą, to koniec. Strzelcy w wieżach strażniczych mają rozkazy zabijać na miejscu.\n"]
+    printYellow ["Sam drut byłby dość nieprzyjemną przeszkodą, ale wizja dostania kulką powoduje konieczność przemyślanego podejścia do problemu.\n" ]
+    printYellow ["Ale najpierw musisz przedostać się przez płot. "]
+    printYellow ["Reflektory obracają się w stałym tempie. Ich droga jest przewidywalna.\n"]
+    printBlue ["Jeśli spędzisz trochę czasu, znajdziesz moment kiedy nikt nie patrzy na kawałek płotu na tyle długo, by się przeprawić."]
+    if (canFence state)
+        then do
+            printBlue ["\n Słyszałeś o miejscu, którego nie dosięgają reflektory. "]
+            printYellow ["Jeśli udało by ci się je znaleźć, to drut nie powinien sprawiać większych kłopotów.\n"]
+            printBlue ["Powinno być gdzieś na wschód..."]
+        else do
+            printYellow ["\n"]
+    printBlue ["Na południu znajduje sie plaża"]
 
-opis "blindspot" = do
+opis "blindspot" _ = do
     printYellow ["Ostrożnie poruszasz się przy murze więzienia dopóki nie znajdziesz się w okolicy o której słyszałeś. "]
     printYellow ["Rzeczywiście, reflektory omijają to miejsce! \n"]
     printBlue ["Spokojnie możesz tu przekroczyć fence i udać się na południe, na plażę."]
@@ -74,18 +103,25 @@ readCmd = do
     cmd <- getLine
     return cmd
 
+gameLoop :: State -> IO()
 gameLoop state = do
     opisDispatcher state
     cmd <- readCmd
     printRed [cmd]
-    let next_state = State "blindspot" ["ponton"]
-    gameLoop next_state
+    -- let next_state = state{}
+    -- gameLoop next_state
 
-
+main :: IO ()
 main = do
-    let initState = State {
+    let initState = State{
         location = "wall",
-        inventory = ["ponton"]
+        inventory = ["ponton"],
+        canWater = False,
+        canFence = False,
+        guardsPresent = True
     }
     printGreen ["loaded \n"]
     gameLoop initState
+
+
+-- initState = State{location = "wall",inventory = ["ponton"],canWater = False,canFence = False,guardsPresent = True}
