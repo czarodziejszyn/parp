@@ -45,15 +45,20 @@ opis "mur" = do
 opis "blindspot" = do
     printYellow ["Ostrożnie poruszasz się przy murze więzienia dopóki nie znajdziesz się w okolicy o której słyszałeś. "]
     printYellow ["Rzeczywiście, reflektory omijają to miejsce! \n"]
-    printYellow ["Spokojnie możesz tu przekroczyć płot i udać się na południe, na plażę.\n"]
     printBlue ["Spokojnie możesz tu przekroczyć płot i udać się na południe, na plażę."]
 
 
+readCmd = do
+    putStr $ "\x1b[32m" ++ " > " ++ "\x1b[0m"
+    cmd <- getLine
+    return cmd
 
 gameLoop state = do
     opisDispatcher state
---    let next_state = State "blindspot" ["ponton"]
---    gameLoop next_state
+    cmd <- readCmd
+    printRed [cmd]
+    let next_state = State "blindspot" ["ponton"]
+    gameLoop next_state
 
 
 main = do
