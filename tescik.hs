@@ -25,7 +25,7 @@ tekstInstrukcji =
   , "ekwipunek              -- sprawdź ekwipunek."
   , "instrukcje             -- pokaż instrukcje."
   , "mapa                   -- pokaż mapę celi."
-  , "exit                   -- zakończ grę."
+  , "wyjscie                   -- zakończ grę."
   , ""
   ]
 
@@ -66,12 +66,12 @@ printGreen text = putStr $ "\x1b[32m" ++ unlines text ++ "\x1b[0m"
 opis :: String -> IO ()
 opis "srodek celi" = printYellow ["Jesteś w centrum swojej celi. Skompletuj ekwipunek do ucieczki."]
 opis "lozko" = printYellow ["lozko. Może znajdziesz tu coś, z czego zrobisz manekina?"]
-opis "toaleta" = printYellow ["Jesteś przy toalecie. Widzisz śrubokręt."]
+opis "toaleta" = printYellow ["Jesteś przy toalecie."]
 opis "magazyn" = printYellow ["Magazynek. Znajdziesz tu narzędzia."]
-opis "poludnie" = printYellow ["poludnie. Są tu płaszcze przeciwdeszczowe i klej."]
+opis "poludnie" = printYellow ["poludnie."]
 opis "krata wentylacyjna" = printYellow ["Stoisz przy kratce wentylacyjnej. Chyba tędy musisz uciec?"]
-opis "zlew" = printYellow ["Zlew. Jest tu sznurek, drut i kawałek materiału."]
-opis "szyb1" = printYellow ["Wpełzasz do ciasnego kanału. Przed Tobą zakręt."]
+opis "zlew" = printYellow ["Zlew."]
+opis "szyb1" = printYellow ["Wpełzasz do ciasnego kanału. Widać coś na północy."]
 opis "szyb2" = printYellow ["Bardzo ciasno. Przed tobą kratka, którą trzeba odkręcić"]
 opis "szyb3"  = printYellow ["Brawo udało ci się odkręcić kratkę!! kontynuuj ucieczkę"]
 opis "szyb4" = printYellow ["Kanał schodzi w dół."]
@@ -297,7 +297,7 @@ wykonajKomende wejscie
                     put (lok, ("krata_otwarta", lok) : ps, eqLyzka, nozUzycia', lyzkaUzycia', kratki)
                     liftIO $ printRed ["Wentylacja została otwarta!"]
           else liftIO $ printYellow ["Wierć dalej..."]
-          
+
     | wejscie == "odkrec" = do
       (lok, ps, eq, nuz, lyz, odk) <- get
       if lok `elem` kratkiDoOdkrecenia
