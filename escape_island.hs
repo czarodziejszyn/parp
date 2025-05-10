@@ -85,28 +85,28 @@ sprawdzCzas state = do
         printRed ["Zostały ci " ++ show hours ++ " godziny!"]
 
 
--- rozejrzyj
+-- look
 
-rozejrzyj :: State -> IO()
-rozejrzyj state = do
-    opisz state
+look :: State -> IO()
+look state = do
+    describeDispatch state
     sprawdzCzas state
 
-opisz :: State -> IO()
-opisz state =
-    opis lokacja state
+describeDispatch :: State -> IO()
+describeDispatch state =
+    describe lokacja state
     where
         lokacja = location state
 
-opis :: String -> State -> IO ()
-opis "wall" _ = do
+describe :: String -> State -> IO ()
+describe "wall" _ = do
     printYellow ["Po dłużącym się zejściu z radością witasz grunt pod stopami."]
     printYellow ["Mimo, że mury więzienia już masz za sobą, do pokonania została jeszcze bariera z drutu kolczastego i wody zatoki San Francisco.\n"]
     printYellow ["Noc niedługo się skończy, a wraz z nią twoja szansa na ucieczkę. "]
     printYellow ["Wiesz, że nie masz za dużo czasu.\n"]
     printBlue ["Na południe od ciebie znajduje się ogrodzenie z drutu."]
 
-opis "fence" state  = do
+describe "fence" state  = do
     printYellow ["Przed tobą znajduje się bariera wykonana z drutu kolczastego otaczająca budynek więzienny."]
     printYellow ["Teren wokół niej przeszukują reflektory. Wiesz, że jak cię zobaczą, to koniec. Strzelcy w wieżach strażniczych mają rozkazy zabijać na miejscu.\n"]
     printYellow ["Sam drut byłby dość nieprzyjemną przeszkodą, ale wizja dostania kulką powoduje konieczność przemyślanego podejścia do problemu.\n" ]
@@ -122,7 +122,7 @@ opis "fence" state  = do
             printYellow ["\n"]
     printBlue ["Na południu znajduje sie plaża"]
 
-opis "blindspot" _ = do
+describe "blindspot" _ = do
     printYellow ["Ostrożnie poruszasz się przy murze więzienia dopóki nie znajdziesz się w okolicy o której słyszałeś. "]
     printYellow ["Rzeczywiście, reflektory omijają to miejsce! \n"]
     printBlue ["Spokojnie możesz tu przekroczyć fence i udać się na południe, na plażę."]
@@ -135,7 +135,7 @@ readCmd = do
 
 gameLoop :: State -> IO()
 gameLoop state = do
-    opisz state
+    describeDispatch state
     cmd <- readCmd
     printRed [cmd]
     -- let next_state = state{}
