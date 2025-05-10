@@ -71,7 +71,7 @@ idz state dir = state {location = move (location state) dir}
 
 deductTime state t = state{time  = (time state) -t}
 
-sprawdzCzas state = do
+checkTime state = do
     let hours = time state
     if hours <= 0 then do
         printRed [
@@ -79,6 +79,7 @@ sprawdzCzas state = do
             , "Z gmachu więzienia wydobywa się wycie syren. Wiedzą o twojej uciecze i mają cię jak na dłoni..."
             , "Przynajmniej spróbowałeś ..."
             ]
+        die ""
     else if hours == 5 then do
         printRed ["Zostało ci 5 godzin"]
     else if hours == 1 then do
@@ -89,21 +90,61 @@ sprawdzCzas state = do
     else do
         printRed ["Zostały ci " ++ show hours ++ " godziny!"]
 
+-- wait
 
 
+--wait :: State -> String -> State
+-- wait state "fence" = do
+--    let st = deductTime state 2
+--    let st_t = st {canFence = True}
+--    waitText "fence"
+--    checkTime st_t
+--    return st_t
+
+
+wait :: State -> String -> State
+wait state "fence" = st {canFence =True}
+    where st = deductTime state 2
+
+--wait :: State -> String -> IO(State)
+--wait state "docks" = do
+--    waitText "docks"
+--    let st = deductTime state 2
+--    let st_t = st {guardsPresent = False}
+--    checkTime st_t
+--    return st_t
+
+-- by god use st <- waitWrap when reading state
+waitWrap state = do
+    waitText (location state)
+    return ( wait state (location state))
+
+-- return  (location state)
+
+waitText :: String -> IO()
+waitText "fence" = do
+    printGreen ["\nCzekasz i obserwujesz sposób poruszania się świateł. Po kilku cyklach jesteś pewien swojej oceny - masz okazję do przekroczenia ogrodzenia."]
+
+waitText "docks" = do
+    printYellow [
+        "Usiadłeś w miejscu, którego nie skanują reflektory i czekasz... "
+        , "Po dłuższej chwili jeden ze strażników zaczyna głośno narzekać, że na tym posterunku nic się nigdy nie dzieje. "
+        , "Przysłuchujesz się rozmowie i z radością przyjmujesz ich decyzję o skoczeniu po karty."
+        ]
+
+waitText _ = do
+    printYellow ["zmarnowałeś nieco czasu."]
 
 -- look
 
 look :: State -> IO()
 look state = do
     describeDispatch state
-    sprawdzCzas state
+    checkTime state
 
 describeDispatch :: State -> IO()
 describeDispatch state =
     describe (location state)
---    where
---        lokacja =
 
 describe :: String -> IO ()
 describe "wall" = do
@@ -248,6 +289,8 @@ describe "car" = do
         , "Na twoje nieszczęście, kiedy próbujesz odpalić zwierając przewody uruchamia się alarm."
         ]
 
+-- win lose die
+
 win = do
     printYellow ["Z twojego starego domu dobiega odległe wycie syren..."]
     printGreen ["Gratuluje! Udało ci się uciec z więzienia!"]
@@ -273,6 +316,9 @@ die "docks" = do
 die _ = do
     printRed ["Umierasz, koniec gry"]
 
+
+-- game loop
+
 readCmd = do
     putStr $ "\x1b[32m" ++ " > " ++ "\x1b[0m"
     cmd <- getLine
@@ -283,8 +329,8 @@ gameLoop state = do
     describeDispatch state
     cmd <- readCmd
     printRed [cmd]
-    -- let next_state = state{}
-    -- gameLoop next_state
+    --let next_state = state{}
+    gameLoop state
 
 main :: IO ()
 main = do
