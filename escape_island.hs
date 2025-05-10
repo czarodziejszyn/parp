@@ -14,9 +14,6 @@ printYellow text = putStr $ "\x1b[33m" ++ unlines text ++ "\x1b[0m"
 printGreen :: [String] -> IO ()
 printGreen text = putStr $ "\x1b[32m" ++ unlines text ++ "\x1b[0m"
 
--- directions --
-
--- data Direction = "N" | "S" | "E" | "W"
 
 -- paths
 
