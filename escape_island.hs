@@ -90,6 +90,8 @@ sprawdzCzas state = do
         printRed ["Zostały ci " ++ show hours ++ " godziny!"]
 
 
+
+
 -- look
 
 look :: State -> IO()
@@ -252,6 +254,24 @@ win = do
 
 lose = do
     printRed ["Mimo twoich starań, twój plan nie powiódł się na jego ostatnim etapie."]
+
+die "fence" = do
+    printYellow [
+        "Rzucasz się na ogrodzenie, gdy tylko światło reflektora się od niego odsuwa. "
+        , "Niestety źle wybrałeś chwilę i zanim wspiąłeś się na połowę wysokości otacza cię snop światła."
+        , "Słyszysz syreny alarmowe...\n\n"
+        ]
+    printRed ["Umierasz, koniec gry"]
+
+die "docks" = do
+    printYellow [
+        "Udaje ci się zakraść niedaleko jednego ze strażników. Jednak gdy jest on na wyciągnięcie ręki drugi obraca się w twoją stronę. "
+        , "Rzucasz się w stronę łodzi w akcie desperacji. Skaczesz i wpadasz do niej z impetem, ale z pomostu słyszysz: Wyłaź! Na ziemię! Podnoś ręce!'."
+        ]
+    printRed ["Umierasz, koniec gry"]
+
+die _ = do
+    printRed ["Umierasz, koniec gry"]
 
 readCmd = do
     putStr $ "\x1b[32m" ++ " > " ++ "\x1b[0m"
