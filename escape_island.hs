@@ -52,6 +52,10 @@ data State = State {
     time :: Int
 }
 
+-- inventory
+
+checkInventory state item = elem item (inventory state)
+
 -- move
 
 move from dir = do
@@ -91,38 +95,46 @@ look state = do
 
 describeDispatch :: State -> IO()
 describeDispatch state =
-    describe lokacja state
-    where
-        lokacja = location state
+    describe (location state)
+--    where
+--        lokacja =
 
-describe :: String -> State -> IO ()
-describe "wall" _ = do
+describe :: String -> IO ()
+describe "wall" = do
     printYellow ["Po dłużącym się zejściu z radością witasz grunt pod stopami."]
     printYellow ["Mimo, że mury więzienia już masz za sobą, do pokonania została jeszcze bariera z drutu kolczastego i wody zatoki San Francisco.\n"]
     printYellow ["Noc niedługo się skończy, a wraz z nią twoja szansa na ucieczkę. "]
     printYellow ["Wiesz, że nie masz za dużo czasu.\n"]
     printBlue ["Na południe od ciebie znajduje się ogrodzenie z drutu."]
 
-describe "fence" state  = do
+describe "fence" = do
     printYellow ["Przed tobą znajduje się bariera wykonana z drutu kolczastego otaczająca budynek więzienny."]
     printYellow ["Teren wokół niej przeszukują reflektory. Wiesz, że jak cię zobaczą, to koniec. Strzelcy w wieżach strażniczych mają rozkazy zabijać na miejscu.\n"]
     printYellow ["Sam drut byłby dość nieprzyjemną przeszkodą, ale wizja dostania kulką powoduje konieczność przemyślanego podejścia do problemu.\n" ]
     printYellow ["Ale najpierw musisz przedostać się przez płot. "]
     printYellow ["Reflektory obracają się w stałym tempie. Ich droga jest przewidywalna.\n"]
     printBlue ["Jeśli spędzisz trochę czasu, znajdziesz moment kiedy nikt nie patrzy na kawałek płotu na tyle długo, by się przeprawić."]
-    if (canFence state)
-        then do
-            printBlue ["\n Słyszałeś o miejscu, którego nie dosięgają reflektory. "]
-            printYellow ["Jeśli udało by ci się je znaleźć, to drut nie powinien sprawiać większych kłopotów.\n"]
-            printBlue ["Powinno być gdzieś na wschód..."]
-        else do
-            printYellow ["\n"]
+    printBlue ["\n Słyszałeś o miejscu, którego nie dosięgają reflektory. "]
+    printYellow ["Jeśli udało by ci się je znaleźć, to drut nie powinien sprawiać większych kłopotów.\n"]
+    printBlue ["Powinno być gdzieś na wschód..."]
     printBlue ["Na południu znajduje sie plaża"]
 
-describe "blindspot" _ = do
+describe "blindspot" = do
     printYellow ["Ostrożnie poruszasz się przy murze więzienia dopóki nie znajdziesz się w okolicy o której słyszałeś. "]
     printYellow ["Rzeczywiście, reflektory omijają to miejsce! \n"]
     printBlue ["Spokojnie możesz tu przekroczyć fence i udać się na południe, na plażę."]
+
+describe "beach" = do
+    printYellow ["Czarna tafla wody rozciąga się coraz szerzej przed twoimi oczami. "]
+    printYellow ["Nocna cisza przerywana jest ciągłym szumem fal rozbijających się o brzeg. "]
+    printYellow ["Pod twoimi stopami czujesz szorstkie wyboiste kamyki. "]
+    printYellow ["Dotarłeś do plaży.\n"]
+    printYellow ["Kilka godzin jakie ci pozostało zmusza cię do wybrania jednej drogi."]
+    printBlue ["Masz przygotowany improwizowany ponton"]
+    printBlue ["Wystarczy go tylko napompować i odpłynąć\n"]
+    printBlue ["W kieszeni nadal znajduje się twoja improwizowana broń. "]
+    printBlue ["Jeżeli masz trochę szczęścia może będziesz w stanie obezwładnic strażników przy dokach i ukraść motorówkę?\n"]
+    printBlue ["Na zachód - doki, na północ ogrodzenie."]
 
 
 readCmd = do
