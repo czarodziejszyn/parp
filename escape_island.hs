@@ -16,9 +16,26 @@ printGreen text = putStr $ "\x1b[32m" ++ unlines text ++ "\x1b[0m"
 
 -- end common --
 
+-- state --
+
+-- time
+
+-- inventory
+
+-- end state --
+
 opis "mur" = do
     printYellow ["Po dłużącym się zejściu z radością witasz grunt pod stopami."]
     printYellow ["Mimo, że mury więzienia już masz za sobą, do pokonania została jeszcze bariera z drutu kolczastego i wody zatoki San Francisco.\n"]
     printYellow ["Noc niedługo się skończy, a wraz z nią twoja szansa na ucieczkę. "]
     printYellow ["Wiesz, że nie masz za dużo czasu.\n"]
     printBlue ["Na południe od ciebie znajduje się ogrodzenie z drutu."]
+
+-- opis "płot"  = do
+--    printYellow ["]
+
+opis "blindspot" = do
+    printYellow ["Ostrożnie poruszasz się przy murze więzienia dopóki nie znajdziesz się w okolicy o której słyszałeś. "]
+    printYellow ["Rzeczywiście, reflektory omijają to miejsce! \n"]
+    printYellow ["Spokojnie możesz tu przekroczyć płot i udać się na południe, na plażę.\n"]
+    printBlue ["Spokojnie możesz tu przekroczyć płot i udać się na południe, na plażę."]
