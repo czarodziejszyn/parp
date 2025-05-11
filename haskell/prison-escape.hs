@@ -1141,15 +1141,18 @@ use state "ponton" = do
 
 -- win lose die
 
+win :: IO()
 win = do
     printYellow ["Z twojego starego domu dobiega odległe wycie syren..."]
     printGreen ["Gratuluje! Udało ci się uciec z więzienia!"]
     exitSuccess
 
+lose :: IO()
 lose = do
     printRed ["Mimo twoich starań, twój plan nie powiódł się na jego ostatnim etapie."]
     exitSuccess
 
+playerDie :: String -> IO()
 playerDie "fence" = do
     printYellow [
         "Rzucasz się na ogrodzenie, gdy tylko światło reflektora się od niego odsuwa. "
@@ -1174,7 +1177,8 @@ playerDie _ = do
 
 -- game loop
 
-
+-- utrzymanie interfejsu
+tekstInstrukcje3 :: StanGry3 -> IO(StanGry3)
 tekstInstrukcje3 state = do
     printGreen [
         "Dostępne komendy:",
