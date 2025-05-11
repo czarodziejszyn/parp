@@ -58,13 +58,12 @@ checkInventory state item = elem item (inventory state)
 
 -- move
 
-move from dir = do
+moveInternal from dir = do
     case HM.lookup (from, dir) paths of
         Nothing ->  from
         Just new_loc ->  new_loc
 
-idz state dir = state {location = move (location state) dir}
-    --let location = location state
+move state dir = state {location = move (location state) dir}
 
 
 -- time
