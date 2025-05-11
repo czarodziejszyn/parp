@@ -49,6 +49,8 @@ data State = State {
     canWater :: Bool,
     canFence :: Bool,
     guardsPresent :: Bool,
+    warnedFence :: Bool,
+    warnedDocks :: Bool,
     time :: Int
 }
 
@@ -58,18 +60,82 @@ checkInventory state item = elem item (inventory state)
 
 -- move
 
+moveInternal :: String -> String -> String
 moveInternal from dir = do
     case HM.lookup (from, dir) paths of
         Nothing ->  from
         Just new_loc ->  new_loc
 
-move state dir = state {location = move (location state) dir}
+move :: State -> String -> IO(State)
+move state dir = do
+    if (location state) == "fence" && dir == "S" then do
+        st <- determine state "fence"
+        return st
+    else if (location state) == "docks" && dir == "S" then do
+        st <- determine state "docks"
+        return st
+    else do
+        let loc = moveInternal (location state) dir
+        if loc == location state then do
+            printRed [
+                "Nie możesz tam przejść!\n"
+                ]
+            return state
+        else do
+            return state {location = loc}
 
+determine :: State -> String -> IO(State)
+determine state "fence" = do
+    if canFence state then do
+        crossFenceText
+        return state {location = "beach"}
+    else if not (warnedFence state) then do
+        warn "fence"
+        return state{warnedFence = True}
+    else do
+        die "fence"
+        return state{location = "dead"}
+
+determine state "docks" = do
+    if not (guardsPresent state) then do
+        getBoatText
+        return state {location = "sea"}
+    else if not (warnedDocks state) then do
+        warn "docks"
+        return state{warnedDocks = True}
+    else do
+        die "docks"
+        return state{location = "dead"}
+
+
+warn "fence" = do
+    printYellow [
+        "Na pewno chcesz rzucić się przez płot tu i teraz? ",
+        "Najpewniej ci się nie uda bez wcześniejszego przygotowania.\n"
+        ]
+
+warn "docks" = do
+    printYellow [
+            "Na pewno chcesz pójść do łodzi mimo obecności strażników?\n"
+        ]
+
+crossFenceText = do
+    printYellow [
+        "Wyczekujesz najdłuższego okna i wspinasz sie na płot. "
+        , "Po sporym wysiłku spadasz na drugą stronę.\n"
+        ]
+
+getBoatText = do
+    printYellow [
+        "Wykorzystujesz swoją okazję i szybko wskakujesz do łodzi. "
+        , "Szybko odwiązujesz cumę i zaczynasz wiosłować. \n"
+        ]
 
 -- time
 
 deductTime state t = state{time  = (time state) -t}
 
+checkTime :: State -> IO(State)
 checkTime state = do
     let hours = time state
     if hours <= 0 then do
@@ -79,15 +145,19 @@ checkTime state = do
             , "Przynajmniej spróbowałeś ..."
             ]
         die ""
+        return state {location = "dead"}
     else if hours == 5 then do
         printRed ["Zostało ci 5 godzin"]
+        return state
     else if hours == 1 then do
         printRed [
             "Horyzont zaczyna odmieniać niewyraźna łuna światła."
             , "Za niespełna godzinę straznicy odkryją twoją ucieczkę, ale ty będziesz wtedy już daleko... racja?"
             ]
+        return state
     else do
         printRed ["Zostały ci " ++ show hours ++ " godziny!"]
+        return state
 
 -- wait
 
@@ -132,10 +202,11 @@ waitText _ = do
 
 -- look
 
-look :: State -> IO()
+look :: State -> IO(State)
 look state = do
     describeDispatch state
-    checkTime state
+    st <- checkTime state
+    return st
 
 describeDispatch :: State -> IO()
 describeDispatch state =
@@ -335,10 +406,12 @@ main = do
         canWater = False,
         canFence = False,
         guardsPresent = True,
+        warnedFence = False,
+        warnedDocks = False,
         time = 5
     }
     printGreen ["loaded \n"]
     gameLoop initState
 
 
--- initState = State{location = "wall",inventory = ["ponton"],canWater = False,canFence = False,guardsPresent = True, time = 5}
+-- st = State{location = "wall",inventory = ["ponton"],canWater = False,canFence = False,guardsPresent = True, warnedFence= False, warnedDocks = False, time = 5}
