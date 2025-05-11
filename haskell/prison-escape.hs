@@ -339,10 +339,14 @@ petlaGry = do
 type Lokacja = String
 type Kierunek = String
 type Rzecz = String
+-- (data type state for second episode)
+-- (type StanGry2 = (i_am_at, [where are objects], [backpack], counter for knive uses, counter for spoon_uses, [list of unscrewed screws])
 type StanGry2 = (Lokacja, [(Rzecz, Lokacja)], [Rzecz], Int, Int, [Lokacja])
+-- monad returns value and state
 type Gra2 a = StateT StanGry2 IO a
 
 tekstInstrukcji :: [String]
+-- new set of instructions for second episode
 tekstInstrukcji =
   [ "Dostępne komendy:"
   , ""
@@ -364,6 +368,7 @@ tekstInstrukcji =
   ]
 
 schematMapy :: [String]
+-- ceil scheme - new map for second episode
 schematMapy =
     [ "W twojej celi znajdują się następujące miejsca:"
   , "zlew           "
@@ -392,11 +397,15 @@ schematMapy =
   ]
 
 printBlue, printRed, printYellow, printGreen :: [String] -> IO ()
+-- functions for printing in colour
 printBlue text = putStr $ "\x1b[34m" ++ unlines text ++ "\x1b[0m"
 printRed text = putStr $ "\x1b[31m" ++ unlines text ++ "\x1b[0m"
 printYellow text = putStr $ "\x1b[33m" ++ unlines text ++ "\x1b[0m"
 printGreen text = putStr $ "\x1b[32m" ++ unlines text ++ "\x1b[0m"
 
+
+-- descriptions of places
+opisMiejsca :: String -> IO ()
 opisMiejsca "srodek celi" = wypiszKolor "Green" "Jesteś w centrum swojej celi. Skompletuj ekwipunek do ucieczki."
 opisMiejsca "lozko" = wypiszKolor "Green" "lozko. Może znajdziesz tu coś, z czego zrobisz manekina?"
 opisMiejsca "toaleta" = wypiszKolor "Green" "Jesteś przy toalecie."
@@ -428,11 +437,12 @@ opisMiejsca _ = wypiszKolor "Green" "Nieznana lokacja."
 printLines :: [String] -> IO ()
 printLines xs = putStr (unlines xs)
 
+-- function that prints piece of text in colour
 instrukcje :: [String] -> IO ()
 instrukcje = mapM_ (wypiszKolor "White")
 
 
-
+-- paths
 sciezki :: [(Lokacja, Kierunek, Lokacja)]
 sciezki =
   [ ("srodek celi", "n", "lozko")
@@ -467,14 +477,25 @@ sciezki =
   , ("zejscie5", "s", "ziemia")
   ]
 
+-- to escape from ceil in the day of escape you need
+-- manequin in bed
+-- fake vent 
+-- screwdriver, coat and glue in your backpack
 spelnioneWarunkiUcieczki :: StanGry2 -> Bool
--- spelnioneWarunkiUcieczki (lok, ps, eq, _, _, _) =
---   ("manekin", "lozko") `elem` ps &&
---   ("atrapa_wentylacji", "krata wentylacyjna") `elem` ps &&
---   all (`elem` eq) ["srubokret", "plaszcz", "klej"]
+spelnioneWarunkiUcieczki (lok, ps, eq, _, _, _) =
+  ("manekin", "lozko") `elem` ps &&
+  ("atrapa_wentylacji", "krata wentylacyjna") `elem` ps &&
+  all (`elem` eq) ["srubokret", "plaszcz", "klej"]
 
-spelnioneWarunkiUcieczki (lok, ps, eq, _, _, _) = True
+-- spelnioneWarunkiUcieczki (lok, ps, eq, _, _, _) = True
+
+
+
 znajdzPrzejscie :: Lokacja -> Kierunek -> StanGry2 -> Maybe Lokacja
+-- logic for vent escape
+-- user is in vent
+-- functions checks if crates are unscrewed (odk list in StanGry2)
+-- unlocks the next step in vent
 znajdzPrzejscie "krata wentylacyjna" "n" stan
   | spelnioneWarunkiUcieczki stan = Just "szyb1"
   | otherwise = Nothing
@@ -494,6 +515,8 @@ znajdzPrzejscie "szyb10" "s" (_, _, _, _, _, odk)
 
 
 znajdzPrzejscie skad kierunek _ = znajdz sciezki
+-- searches in path list
+-- finds if there is a path to destination
   where
     znajdz [] = Nothing
     znajdz ((z, k, dokad):xs)
@@ -503,18 +526,23 @@ znajdzPrzejscie skad kierunek _ = znajdz sciezki
 
 
 kratkiDoOdkrecenia :: [Lokacja]
+-- has all the vents where are crates to unscrew
 kratkiDoOdkrecenia = ["szyb2", "szyb6", "szyb10"]
 
 rozejrzyjSie :: StanGry2 -> IO ()
+-- shows user the surroudings
+-- shows where are you (first element of state tuple)
+-- show items in your surrondings (2rd element of state tuple)
 rozejrzyjSie (lok, przedmioty, _, _, _, _) = do
   let lokalne = [p | (p, l) <- przedmioty, l == lok]
   putStrLn $ "Jesteś w: " ++ lok
   opisMiejsca lok
   if null lokalne
-    then putStrLn "Nie ma tu żadnych Rzeczów."
+    then putStrLn "Nie ma tu żadnych rzeczy."
     else putStrLn $ "Widzisz tutaj: " ++ unwords lokalne
 
 ukazEkwipunek :: StanGry2 -> IO ()
+-- show elements in your backpack
 ukazEkwipunek (_, _, eq, _, _, _) =
   if null eq
     then putStrLn "Twój ekwipunek jest pusty."
@@ -523,45 +551,61 @@ ukazEkwipunek (_, _, eq, _, _, _) =
 
 
 wezRzecz :: String -> StanGry2 -> IO (Maybe StanGry2, String)
+-- takes item from ceil
 wezRzecz przedmiot (lok, przedmioty, eq, nozUzycia, lyzkaUzycia, kratki)
   | (przedmiot, lok) `elem` przedmioty =
+    -- filters the surrounding so it doesnt contain the item ( for example when you take a spoon, spoon disappears from location)
       let nowePrzedmioty = filter (/= (przedmiot, lok)) przedmioty
+      -- return new state without the object in the location
+      -- in the new state the object is in a backpack
           nowyStan = (lok, nowePrzedmioty, przedmiot:eq, nozUzycia, lyzkaUzycia, kratki)
       in return (Just nowyStan, "Podnosisz " ++ przedmiot ++ ".")
   | otherwise = return (Nothing, "Nie ma tu takiego przedmiotu.")
 
 upuscRzecz :: String -> StanGry2 -> IO (Maybe StanGry2, String)
+-- deletes the item from backpack
+-- creates new state with item in some particular location
 upuscRzecz przedmiot (lok, przedmioty, eq, nozUzycia, lyzkaUzycia, kratki)
   | przedmiot `elem` eq =
       let nowyEq = filter (/= przedmiot) eq
+      -- new state with updated (przedmioty, lok) (second element of state tuple) 
           nowyStan = (lok, (przedmiot, lok):przedmioty, nowyEq, nozUzycia, lyzkaUzycia, kratki)
       in return (Just nowyStan, "Upuszczasz " ++ przedmiot ++ ".")
-  | otherwise = return (Nothing, "Nie masz takiego Rzeczu.")
+  | otherwise = return (Nothing, "Nie masz takiej rzeczy.")
 
 
 zrobManekina :: StanGry2 -> (StanGry2, String)
+-- creates a manequin
 zrobManekina (lok, ps, eq, nozUzycia, lyzkaUzycia, kratki)
+    -- you need these elements to create manequin
   | all (`elem` eq) ["farba", "wlosy", "papier"] =
       let eq' = filter (`notElem` ["farba", "wlosy", "papier"]) eq
       in ((lok, ps, "manekin" : eq', nozUzycia, lyzkaUzycia, kratki), "Stworzyłeś manekina!")
+      -- updates state
   | otherwise = ((lok, ps, eq, nozUzycia, lyzkaUzycia, kratki), "Brakuje Ci materiałów, by stworzyć manekina.")
 
 
 
 polozManekina :: StanGry2 -> (StanGry2, String)
+-- lays down a manequin
 polozManekina (lok, ps, eq, noz, lyz, kratki)
+-- you need to be in sleeping room to create manequin
   | lok /= "lozko" = ((lok, ps, eq, noz, lyz, kratki), "Manekina można położyć tylko na łóżku.")
   | "manekin" `notElem` eq = ((lok, ps, eq, noz, lyz, kratki), "Nie masz manekina, żeby go położyć.")
   | otherwise =
+    -- updates state
       let eq' = filter (/= "manekin") eq
       in ((lok, ("manekin", lok):ps, eq', noz, lyz, kratki), "Położyłeś manekina na łóżku.")
 
 
 
 zrobAtrape :: StanGry2 -> (StanGry2, String)
+-- makes a fake vent
 zrobAtrape (lok, ps, eq, noz, lyz, kratki)
+-- items you need to have to create a vent
   | all (`elem` eq) ["sznurek", "drut", "material"] =
       let eq' = filter (`notElem` ["sznurek", "drut", "material"]) eq
+      -- updates state
       in ((lok, ps, "atrapa_wentylacji" : eq', noz, lyz, kratki), "Stworzyłeś atrapę wentylacji!")
   | otherwise = ((lok, ps, eq, noz, lyz, kratki), "Potrzebujesz sznurka, drutu i materiału, by zrobić atrapę.")
 
@@ -571,30 +615,41 @@ zrobAtrape (lok, ps, eq, noz, lyz, kratki)
 polozAtrape
   :: (Lokacja, [(Rzecz, Lokacja)], [Rzecz], Int, Int, [Lokacja])
   -> ((Lokacja, [(Rzecz, Lokacja)], [Rzecz], Int, Int, [Lokacja]), [String], Bool)
+  -- puts a fake vent in the target place
 polozAtrape (lok, ps, eq, nozUzycia, lyzkaUzycia, kratki)
+-- you have to be in the specific location to place a vent
   | lok /= "krata wentylacyjna" =
       ((lok, ps, eq, nozUzycia, lyzkaUzycia, kratki), ["Musisz być przy wentylacji, aby umieścić atrapę."], False)
+      -- before putting the vent you have to be close to the hole you created
   | not ("atrapa_wentylacji" `elem` eq) =
+    -- you have to have a fake vent
       ((lok, ps, eq, nozUzycia, lyzkaUzycia, kratki), ["Nie masz atrapy przy sobie."], False)
   | not (("krata_otwarta", lok) `elem` ps) =
+    -- you have to drill the vent first
       ((lok, ps, eq, nozUzycia, lyzkaUzycia, kratki), ["Musisz najpierw rozwiercić prawdziwą wentylację."], False)
   | otherwise =
       let eq' = filter (/= "atrapa_wentylacji") eq
           ps' = ("atrapa_wentylacji", lok) : ps
+          -- change of state
       in ((lok, ps', eq', nozUzycia, lyzkaUzycia, kratki),
           ["Założono atrapę wentylacji. Wygląda całkiem realistycznie... wpisz \"n\", aby uciec."], True)
 
 
 wierc
+-- drills a vents
   :: (Lokacja, [(Rzecz, Lokacja)], [Rzecz], Int, Int, [Lokacja])
   -> ((Lokacja, [(Rzecz, Lokacja)], [Rzecz], Int, Int, [Lokacja]), [String])
 wierc (lok, ps, eq, nozUzycia, lyzkaUzycia, kratki)
   | lok /= "krata wentylacyjna" =
+    -- you have to be close to the vent to drill a vent
       ((lok, ps, eq, nozUzycia, lyzkaUzycia, kratki), ["Musisz być przy wentylacji."])
+      -- you have to have a spoon and a knife
   | not ("noz" `elem` eq || "lyzka" `elem` eq) =
       ((lok, ps, eq, nozUzycia, lyzkaUzycia, kratki), ["Potrzebujesz noża lub łyżki, żeby wiercić."])
   | otherwise =
       let
+        -- count aritmethics
+        -- uses special fields in state tuple
           (nozUzycia', eqNoz, msgNoz) =
             if "noz" `elem` eq
               then let k = nozUzycia + 1
@@ -609,7 +664,7 @@ wierc (lok, ps, eq, nozUzycia, lyzkaUzycia, kratki)
                    in if s >= 3 then (s, filter (/= "lyzka") eqNoz, ["Łyżka się złamała!"])
                                 else (s, eqNoz, [])
               else (lyzkaUzycia, eqNoz, [])
-
+        -- vent is open when you reach 3
           ps' =
             if nozUzycia' >= 3 && lyzkaUzycia' >= 3
               then ("krata_otwarta", lok) : ps
@@ -624,23 +679,31 @@ wierc (lok, ps, eq, nozUzycia, lyzkaUzycia, kratki)
       in ((lok, ps', eqLyzka, nozUzycia', lyzkaUzycia', kratki), msg)
 
 odkrec
+-- when you are in the vent you have to unscrew some crates
   :: (Lokacja, [(Rzecz, Lokacja)], [Rzecz], Int, Int, [Lokacja])
   -> [Lokacja]
   -> ((Lokacja, [(Rzecz, Lokacja)], [Rzecz], Int, Int, [Lokacja]), [String], Bool)
 odkrec (lok, ps, eq, noz, lyz, odk) kratkiDoOdkrecenia
   | not (lok `elem` kratkiDoOdkrecenia) =
+    -- specific parts of vent contain creates
       ((lok, ps, eq, noz, lyz, odk), ["Tutaj nie ma kratki do odkręcenia."], False)
+      -- you have to have a screwdriver
   | not ("srubokret" `elem` eq) =
       ((lok, ps, eq, noz, lyz, odk), ["Potrzebujesz śrubokręta, by odkręcić kratkę."], False)
   | lok `elem` odk =
+    -- you already unscrewed a create
       ((lok, ps, eq, noz, lyz, odk), ["Ta kratka jest już odkręcona."], False)
   | otherwise =
+    -- success
       ((lok, ps, eq, noz, lyz, lok : odk), ["Odkręciłeś kratkę! Możesz iść dalej."], True)
 
 
 
 wykonajKomende :: String -> Gra2 ()
+
+-- the switch case to manage commands
 wykonajKomende wejscie
+-- navigation
   | wejscie `elem` ["n", "s", "e", "w"] = do
       (lok, ps, eq, nozUzycia, lyzkaUzycia,kratki) <- get
       case znajdzPrzejscie lok wejscie (lok, ps, eq, nozUzycia, lyzkaUzycia, kratki) of
@@ -649,19 +712,24 @@ wykonajKomende wejscie
               liftIO $ putStrLn $ "Idziesz na " ++ wejscie ++ " -> " ++ nowaLokacja
               liftIO $ opisMiejsca nowaLokacja
         Nothing -> liftIO $ putStrLn "Nie ma przejścia w tym kierunku."
-
+-- look around
   | wejscie == "rozejrzyj" = do
     stan <- get
     liftIO $ rozejrzyjSie stan
+
+-- instructions
   | wejscie == "instrukcje" = liftIO $ instrukcje tekstInstrukcji
+  -- map
   | wejscie == "mapa" = liftIO $ instrukcje schematMapy
+
+  -- backpack
   | wejscie == "ekwipunek" = do
     stan <- get
     liftIO $ ukazEkwipunek stan
   | wejscie == "exit" = liftIO $ exitSuccess
 
 
-
+    -- take an item
   | "wez " `isPrefixOf` wejscie = do
     let rzecz = drop 4 wejscie
     stan <- get
@@ -669,8 +737,8 @@ wykonajKomende wejscie
     case mozeNowyStan of
       Just nowyStan -> put nowyStan
       Nothing -> return ()
-    liftIO $ putStrLn komunikat
-
+    liftIO $ printBlue [komunikat]
+-- drop an item
  | "upusc " `isPrefixOf` wejscie = do
     let rzecz = drop 6 wejscie
     stan <- get
@@ -678,30 +746,30 @@ wykonajKomende wejscie
     case mozeNowyStan of
       Just nowyStan -> put nowyStan
       Nothing -> return ()
-    liftIO $ putStrLn komunikat
-
+    liftIO $ printBlue [komunikat]
+-- make a manequin
 
     | wejscie == "zrob_manekina" = do
     stan <- get
     let (nowyStan, komunikat) = zrobManekina stan
     put nowyStan
-    liftIO $ putStrLn komunikat
+    liftIO $ printRed [komunikat]
 
-
+-- place a manequin
   | wejscie == "poloz_manekina" = do
     stan <- get
     let (nowyStan, komunikat) = polozManekina stan
     put nowyStan
-    liftIO $ putStrLn komunikat
-
+    liftIO $ printRed [komunikat]
+-- make a fake vent
 
     | wejscie == "zrob_atrape" = do
     stan <- get
     let (nowyStan, komunikat) = zrobAtrape stan
     put nowyStan
-    liftIO $ putStrLn komunikat
+    liftIO $ printRed [komunikat]
 
-
+-- place a fake vent
   | wejscie == "poloz_atrape" = do
     (lok, ps, eq, nozUzycia, lyzkaUzycia, kratki) <- get
     let (nowyStan, komunikaty, sukces) = polozAtrape (lok, ps, eq, nozUzycia, lyzkaUzycia, kratki)
@@ -709,30 +777,31 @@ wykonajKomende wejscie
     if sukces
       then liftIO $ printRed komunikaty
       else liftIO $ printYellow komunikaty
-
+-- frill
      | wejscie == "wierc" = do
     stan <- get
     let (nowyStan, komunikaty) = wierc stan
     put nowyStan
     sequence_ [liftIO $ printYellow [m] | m <- komunikaty]
-
+-- unscrew
     | wejscie == "odkrec" = do
     (lok, ps, eq, noz, lyz, odk) <- get
     let (nowyStan, komunikaty, sukces) = odkrec (lok, ps, eq, noz, lyz, odk) kratkiDoOdkrecenia
     put nowyStan
     mapM_ (liftIO . printYellow . (:[])) komunikaty
 
-
-  | wejscie == "wyjscie" = liftIO $ putStrLn "Zakończono grę."
   | otherwise = liftIO $ putStrLn "Nie rozumiem polecenia."
 
 petla :: Gra2 ()
+-- manages the ending of a game and its begining
 petla = do
   (lok, _, _, _, _, _) <- get
+  -- condition for ending stage2
   if lok == "ziemia"
     then return ()
   else
     do
+        -- CLI
         liftIO $ putStr "> "
         liftIO $ hFlush stdout
         komenda <- liftIO getLine
@@ -742,6 +811,7 @@ petla = do
 
 czesc2 :: IO ()
 czesc2 = do
+    -- all the necesarry elements of the ceil escape stage
                 let poczatkowyStan = ("srodek celi",
                         [ ("farba", "lozko")
                         , ("wlosy", "lozko")
@@ -1261,9 +1331,9 @@ czesc3 = do
 main :: IO ()
 main = do
         -- czesc 1
-        wypiszDialogStartowy
-        instrukcje tekstInstrukcje1
-        evalStateT ( idz Cela >> petlaGry) stanPoczatkowy
+        -- wypiszDialogStartowy
+        -- instrukcje tekstInstrukcje1
+        -- evalStateT ( idz Cela >> petlaGry) stanPoczatkowy
         -- czesc 2
         czesc2
         -- czesc 3
