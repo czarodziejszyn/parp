@@ -8,6 +8,7 @@ import Data.Maybe (fromMaybe)
 import Data.List (intercalate)
 import System.IO
 import Data.List (isPrefixOf, delete, isInfixOf)
+import System.Exit
 
 
 -------------
@@ -77,7 +78,7 @@ wypiszKolor kolor tekst = putStrLn $ koloruj kolor tekst
     koloruj "Blue"    txt = "\x1b[34m" ++ txt ++ reset
     koloruj "White"   txt = "\x1b[37m" ++ txt ++ reset
     koloruj "Magenta" txt = "\x1b[35m" ++ txt ++ reset
-    koloruj _         txt = txt  
+    koloruj _         txt = txt
 
 
 opis :: Miejsce -> String
@@ -105,7 +106,7 @@ rozejrzyj = do
     let przedmioty = fromMaybe [] (Map.lookup miejsceGracza przedmiotyLokacji)
         postacie = fromMaybe [] (Map.lookup miejsceGracza postacieLokacji)
     liftIO $ do
-        if null przedmioty 
+        if null przedmioty
             then wypiszKolor "Blue" "Nie ma tu nic ciekawego."
             else do
                 wypiszKolor "Magenta" "Widzisz: "
@@ -125,7 +126,7 @@ wez przedmiot = do
         then case (przedmiot, miejsceGracza) of
             -- przypadek dla pizamy
             (Pizama, Cela) | Nozyczki `notElem` ekwipunek && not (Nozyczki `elem` fromMaybe [] (Map.lookup Biblioteka przedmiotyLokacji)) -> do
-                let nowePrzedmiotyLokacji = Map.adjust (Nozyczki :) Biblioteka przedmiotyLokacji 
+                let nowePrzedmiotyLokacji = Map.adjust (Nozyczki :) Biblioteka przedmiotyLokacji
                 put state { przedmiotyLokacji = nowePrzedmiotyLokacji}
                 liftIO $ wypiszKolor "Red" "Bezużyteczna piżama... chyba że znajdziesz coś czym wytnie się z niej sznurek i materiał."
             (Pizama, Cela) | Nozyczki `elem` ekwipunek && Sznurek `notElem` ekwipunek && Material `notElem` ekwipunek -> do
@@ -166,7 +167,7 @@ wez przedmiot = do
             (Atlas, Biblioteka) -> do
                 let nowePrzedmiotyTutaj = filter (/= Atlas) przedmiotyTutaj
                     nowePrzedimotyMapa = Map.insert miejsceGracza nowePrzedmiotyTutaj przedmiotyLokacji
-                    noweDialogi = Map.insert Redding "Super, dzięki za atlas! Sprawę kontaktu możesz uznać za załatwioną." dialogi 
+                    noweDialogi = Map.insert Redding "Super, dzięki za atlas! Sprawę kontaktu możesz uznać za załatwioną." dialogi
                 put state { ekwipunek = Kontakt : Atlas : ekwipunek, przedmiotyLokacji = nowePrzedimotyMapa, dialogi = noweDialogi }
                 liftIO $ wypiszKolor "Green" $ "Zabrałeś: " ++ show przedmiot
 
@@ -236,7 +237,7 @@ sprawdzUcieczke = do
 
 wypiszDialogStartowy :: IO ()
 wypiszDialogStartowy = do
-    let dialogStartowy = 
+    let dialogStartowy =
             [ ("Prokurator", "Niech Pan opowie jak z Pana perspektywy wyglądała rozmowa z szefem tego dnia.")
             , ("Andy Dufresne", "Był bardzo szorstki. Powiedział, że nikt już nie korzysta z vima, że zmniejsza on moją produktywność i zwolnienie mnie to jego jedyne wyjście.")
             , ("Prokurator", "Czy po tym incydencie wypchnął Pan na maina gałąź, w której cały kod był pisany w jednej linii, a nazwy funkcji nie oddawały ich działania? Tu przykład: funkcja launch_missle() wypisywała na konsolę 'Hello, World'.")
@@ -363,7 +364,7 @@ tekstInstrukcji =
   ]
 
 schematMapy :: [String]
-schematMapy = 
+schematMapy =
     [ "W twojej celi znajdują się następujące miejsca:"
   , "zlew           "
   , "srodek celi    "
@@ -593,7 +594,7 @@ wierc (lok, ps, eq, nozUzycia, lyzkaUzycia, kratki)
   | not ("noz" `elem` eq || "lyzka" `elem` eq) =
       ((lok, ps, eq, nozUzycia, lyzkaUzycia, kratki), ["Potrzebujesz noża lub łyżki, żeby wiercić."])
   | otherwise =
-      let 
+      let
           (nozUzycia', eqNoz, msgNoz) =
             if "noz" `elem` eq
               then let k = nozUzycia + 1
@@ -601,7 +602,7 @@ wierc (lok, ps, eq, nozUzycia, lyzkaUzycia, kratki)
                                 else (k, eq, [])
               else (nozUzycia, eq, [])
 
-          
+
           (lyzkaUzycia', eqLyzka, msgLyzka) =
             if "lyzka" `elem` eq
               then let s = lyzkaUzycia + 1
@@ -646,7 +647,7 @@ wykonajKomende wejscie
         Just nowaLokacja -> do
               put (nowaLokacja, ps, eq, nozUzycia, lyzkaUzycia, kratki)
               liftIO $ putStrLn $ "Idziesz na " ++ wejscie ++ " -> " ++ nowaLokacja
-              liftIO $ opisMiejsca nowaLokacja 
+              liftIO $ opisMiejsca nowaLokacja
         Nothing -> liftIO $ putStrLn "Nie ma przejścia w tym kierunku."
 
   | wejscie == "rozejrzyj" = do
@@ -729,7 +730,7 @@ petla = do
   (lok, _, _, _, _, _) <- get
   if lok == "ziemia"
     then return ()
-  else 
+  else
     do
         liftIO $ putStr "> "
         liftIO $ hFlush stdout
@@ -752,7 +753,7 @@ czesc2 = do
                         , ("sznurek", "zlew")
                         , ("drut", "zlew")
                         , ("material", "zlew")
-                        ], [], 0, 0, []) 
+                        ], [], 0, 0, [])
 
                 opisMiejsca "srodek celi"
                 evalStateT petla poczatkowyStan
@@ -853,7 +854,7 @@ determine state "fence" = do
         warn "fence"
         return state{warnedFence = True}
     else do
-        die "fence"
+        playerDie "fence"
         return state{location = "dead"}
 
 determine state "docks" = do
@@ -864,18 +865,18 @@ determine state "docks" = do
         warn "docks"
         return state{warnedDocks = True}
     else do
-        die "docks"
+        playerDie "docks"
         return state{location = "dead"}
 
 
 warn "fence" = do
-    printYellow [
+    printRed [
         "Na pewno chcesz rzucić się przez płot tu i teraz? ",
         "Najpewniej ci się nie uda bez wcześniejszego przygotowania.\n"
         ]
 
 warn "docks" = do
-    printYellow [
+    printRed [
             "Na pewno chcesz pójść do łodzi mimo obecności strażników?\n"
         ]
 
@@ -904,7 +905,7 @@ checkTime state = do
             , "Z gmachu więzienia wydobywa się wycie syren. Wiedzą o twojej uciecze i mają cię jak na dłoni..."
             , "Przynajmniej spróbowałeś ..."
             ]
-        die ""
+        playerDie ""
         return state {location = "dead"}
     else if hours == 5 then do
         printRed ["Zostało ci 5 godzin"]
@@ -1055,6 +1056,7 @@ describe "island" = do
         , "Nie masz jedzenia ani pitnej wody. Będziesz musiał niedługo popłynąć na ląd, ale tam będą cię szukać. "
         , "Wyciągasz ponton na brzeg. Wschodzące słońce pomaga ci szukać miejsca na kryjówkę.\n\n"
         ]
+    win
 
 describe "shore" = do
     printYellow [
@@ -1069,6 +1071,7 @@ describe "shore" = do
         , "Nie wrócisz do normalnego życia, nie w tym kraju. "
         , "Z rozmyśleń wybudza cię dźwięk uruchamianego silnika. Kierujesz się do samochodu na skraju drogi...\n\n "
         ]
+    win
 
 describe "city" = do
     printYellow [
@@ -1097,6 +1100,7 @@ describe "bus" = do
         , "dzięki czemu nie zauważa, że nie kupujesz biletu."
         , "Widocznie uznał, że masz czasowy... albo nie chce się awanturować."
         ]
+    win
 
 describe "car" = do
     printYellow [
@@ -1106,49 +1110,129 @@ describe "car" = do
         , "Szybko wchodzisz do auta i przeciskasz się na siedzenie kierowcy. "
         , "Na twoje nieszczęście, kiedy próbujesz odpalić zwierając przewody uruchamia się alarm."
         ]
+    lose
+
+-- items
+
+fightText = do
+    printYellow [
+        "Strażnicy nie są przygotowani na twój atak. "
+        , "Udaje ci się zakraść niedaleko jednego ze strażników. "
+        , "Rzucasz się na bliższego sobie strażnika, i zdzieliłeś go po głowie. "
+        ,"Zanim drugi zorientuje się co się dzieje, także dostaje po głowie."
+        ]
+    printGreen ["Jesteś sam na doku..."]
+
+floatText = do
+    printYellow [
+        "Po dłuższym czasie pompowania ponton nabrał kształtu. "
+        , "Twój improwizowany majstersztyk czeka gotowy na dziewiczą podróż. "
+        , "Masz tylko nadzieję, że zdoła unieść twój ciężar... przynajmniej na tyle długo, by resztę drogi pokonać wpław. "
+        , "Na twoje szczęście morze jest dziś bardzo spokojne, żadna fala nie powinna pokrzyżować twoich planów.\n"
+        ]
+
+use :: StanGry3 -> String -> IO(StanGry3)
+use state "bron" = do
+    if (location state) == "docks" && (guardsPresent state) then do
+        fightText
+        return state{guardsPresent = False}
+    else do
+        printRed ["Nie ma tu przeciwników."]
+        return state
+
+use state "ponton" = do
+    if (location state) == "beach" then do
+        if not (canWater state) then do
+            floatText
+            return state{canWater = True}
+        else do
+            printRed ["Ponton jest już napompowany!"]
+            return state
+    else do
+        printRed ["Nie jest to dobre miejsce do napompowania pontonu!"]
+        return state
+
 
 -- win lose die
 
 win = do
     printYellow ["Z twojego starego domu dobiega odległe wycie syren..."]
     printGreen ["Gratuluje! Udało ci się uciec z więzienia!"]
+    exitSuccess
 
 lose = do
     printRed ["Mimo twoich starań, twój plan nie powiódł się na jego ostatnim etapie."]
+    exitSuccess
 
-die "fence" = do
+playerDie "fence" = do
     printYellow [
         "Rzucasz się na ogrodzenie, gdy tylko światło reflektora się od niego odsuwa. "
         , "Niestety źle wybrałeś chwilę i zanim wspiąłeś się na połowę wysokości otacza cię snop światła."
         , "Słyszysz syreny alarmowe...\n\n"
         ]
     printRed ["Umierasz, koniec gry"]
+    exitSuccess
 
-die "docks" = do
+playerDie "docks" = do
     printYellow [
         "Udaje ci się zakraść niedaleko jednego ze strażników. Jednak gdy jest on na wyciągnięcie ręki drugi obraca się w twoją stronę. "
         , "Rzucasz się w stronę łodzi w akcie desperacji. Skaczesz i wpadasz do niej z impetem, ale z pomostu słyszysz: Wyłaź! Na ziemię! Podnoś ręce!'."
         ]
     printRed ["Umierasz, koniec gry"]
+    exitSuccess
 
-die _ = do
+playerDie _ = do
     printRed ["Umierasz, koniec gry"]
+    exitSuccess
 
 
 -- game loop
 
+
+tekstInstrukcje3 state = do
+    printGreen [
+        "Dostępne komendy:",
+        "idz N | S | W | E        -- aby pójść w danym kierunku.",
+        "uzyj(przedmiot)          -- aby użyć przedmiotu z ekwipunku.",
+        "czekaj                   -- aby zaczekać na korzystniejszy moment do działania",
+        "rozejrzyj                -- aby ponownie się rozejrzeć.",
+        "instrukcje               -- aby ponownie wyświetlić tą wiadomość.",
+        "czas                     -- aby sprawdzić pozostały czas  ",
+        "exit                     -- aby skończyć grę i wyjść."
+        ]
+    return state
+
+readCmd :: IO(String)
 readCmd = do
     putStr $ "\x1b[32m" ++ " > " ++ "\x1b[0m"
     cmd <- getLine
     return cmd
 
+interpretCmd :: StanGry3 -> IO(StanGry3)
+interpretCmd state = do
+    cmd <- readCmd
+    if cmd == "exit" then do exitSuccess
+    else do
+        st <- case (words cmd) of
+            ["idz", dir]    -> move state dir
+            ["uzyj", item]  -> use state item
+            ["czekaj"]      -> wait state
+            ["rozejrzyj"]   -> look state
+            ["czas"]        -> checkTime state
+            ["instrukcje"]  -> tekstInstrukcje3 state
+            [_]             -> do
+                printRed["nieznana komenda"]
+                return state
+
+        return st
+
 gameLoop :: StanGry3 -> IO()
 gameLoop state = do
     describeDispatch state
-    cmd <- readCmd
-    printRed [cmd]
+    checkTime state
+    st <- interpretCmd state
     --let next_state = state{}
-    gameLoop state
+    gameLoop st
 
 czesc3 :: IO ()
 czesc3 = do
@@ -1166,7 +1250,7 @@ czesc3 = do
     gameLoop initState
 
 
--- st = State{location = "wall",inventory = ["ponton"],canWater = False,canFence = False,guardsPresent = True, warnedFence= False, warnedDocks = False, time = 5}
+-- st = StanGry3{location = "wall",inventory = ["ponton"],canWater = False,canFence = False,guardsPresent = True, warnedFence= False, warnedDocks = False, time = 5}
 
 
 main :: IO ()
@@ -1179,4 +1263,3 @@ main = do
         czesc2
         -- czesc 3
         czesc3
-        
