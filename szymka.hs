@@ -467,12 +467,12 @@ sciezki =
   ]
 
 spelnioneWarunkiUcieczki :: StanGry2 -> Bool
-spelnioneWarunkiUcieczki (lok, ps, eq, _, _, _) =
-  ("manekin", "lozko") `elem` ps &&
-  ("atrapa_wentylacji", "krata wentylacyjna") `elem` ps &&
-  all (`elem` eq) ["srubokret", "plaszcz", "klej"]
+-- spelnioneWarunkiUcieczki (lok, ps, eq, _, _, _) =
+--   ("manekin", "lozko") `elem` ps &&
+--   ("atrapa_wentylacji", "krata wentylacyjna") `elem` ps &&
+--   all (`elem` eq) ["srubokret", "plaszcz", "klej"]
 
--- spelnioneWarunkiUcieczki (lok, ps, eq, _, _, _) = True
+spelnioneWarunkiUcieczki (lok, ps, eq, _, _, _) = True
 znajdzPrzejscie :: Lokacja -> Kierunek -> StanGry2 -> Maybe Lokacja
 znajdzPrzejscie "krata wentylacyjna" "n" stan
   | spelnioneWarunkiUcieczki stan = Just "szyb1"
@@ -726,12 +726,17 @@ wykonajKomende wejscie
 
 petla :: Gra2 ()
 petla = do
-  liftIO $ putStr "> "
-  liftIO $ hFlush stdout
-  komenda <- liftIO getLine
-  if komenda == "wyjscie"
-    then wykonajKomende komenda
-    else wykonajKomende komenda >> petla
+  (lok, _, _, _, _, _) <- get
+  if lok == "ziemia"
+    then return ()
+  else 
+    do
+        liftIO $ putStr "> "
+        liftIO $ hFlush stdout
+        komenda <- liftIO getLine
+        if komenda == "wyjscie"
+            then wykonajKomende komenda
+            else wykonajKomende komenda >> petla
 
 czesc2 :: IO ()
 czesc2 = do
@@ -753,14 +758,425 @@ czesc2 = do
                 evalStateT petla poczatkowyStan
 
 
+-- czesc 3!
 
+
+-- common --
+
+
+-- -- print --
+-- printBlue :: [String] -> IO ()
+-- printBlue text = putStr $ "\x1b[34m" ++ unlines text ++ "\x1b[0m"
+-- printRed :: [String] -> IO ()
+-- printRed text = putStr $ "\x1b[31m" ++ unlines text ++ "\x1b[0m"
+-- printYellow :: [String] -> IO ()
+-- printYellow text = putStr $ "\x1b[33m" ++ unlines text ++ "\x1b[0m"
+-- printGreen :: [String] -> IO ()
+-- printGreen text = putStr $ "\x1b[32m" ++ unlines text ++ "\x1b[0m"
+
+
+-- paths
+
+paths :: Map.Map (String, String) String
+paths = Map.fromList [
+    (("wall", "S"), "fence"),
+
+    (("fence", "N"), "wall"),
+    (("fence", "S"), "beach"),
+    (("fence", "E"), "blindspot"),
+
+    (("blindspot", "S"), "beach"),
+
+    (("beach", "W"), "docks"),
+    (("beach", "S"), "sea"),
+
+    (("docks", "E"), "beach"),
+    (("docks", "S"), "sea"),
+
+    (("sea", "S"), "city"),
+    (("sea", "W"), "shore"),
+    (("sea", "E"), "island"),
+
+    (("city", "W"), "car"),
+    (("city", "E"), "bus")
+    ]
+
+-- state --
+
+data StanGry3 = StanGry3 {
+    location :: String,
+    inventory :: [String],
+    canWater :: Bool,
+    canFence :: Bool,
+    guardsPresent :: Bool,
+    warnedFence :: Bool,
+    warnedDocks :: Bool,
+    time :: Int
+}
+
+-- inventory
+
+checkInventory state item = elem item (inventory state)
+
+-- move
+
+moveInternal :: String -> String -> String
+moveInternal from dir = do
+    case Map.lookup (from, dir) paths of
+        Nothing ->  from
+        Just new_loc ->  new_loc
+
+move :: StanGry3 -> String -> IO(StanGry3)
+move state dir = do
+    if (location state) == "fence" && dir == "S" then do
+        st <- determine state "fence"
+        return st
+    else if (location state) == "docks" && dir == "S" then do
+        st <- determine state "docks"
+        return st
+    else do
+        let loc = moveInternal (location state) dir
+        if loc == location state then do
+            printRed [
+                "Nie możesz tam przejść!\n"
+                ]
+            return state
+        else do
+            return state {location = loc}
+
+determine :: StanGry3 -> String -> IO(StanGry3)
+determine state "fence" = do
+    if canFence state then do
+        crossFenceText
+        return state {location = "beach"}
+    else if not (warnedFence state) then do
+        warn "fence"
+        return state{warnedFence = True}
+    else do
+        die "fence"
+        return state{location = "dead"}
+
+determine state "docks" = do
+    if not (guardsPresent state) then do
+        getBoatText
+        return state {location = "sea"}
+    else if not (warnedDocks state) then do
+        warn "docks"
+        return state{warnedDocks = True}
+    else do
+        die "docks"
+        return state{location = "dead"}
+
+
+warn "fence" = do
+    printYellow [
+        "Na pewno chcesz rzucić się przez płot tu i teraz? ",
+        "Najpewniej ci się nie uda bez wcześniejszego przygotowania.\n"
+        ]
+
+warn "docks" = do
+    printYellow [
+            "Na pewno chcesz pójść do łodzi mimo obecności strażników?\n"
+        ]
+
+crossFenceText = do
+    printYellow [
+        "Wyczekujesz najdłuższego okna i wspinasz sie na płot. "
+        , "Po sporym wysiłku spadasz na drugą stronę.\n"
+        ]
+
+getBoatText = do
+    printYellow [
+        "Wykorzystujesz swoją okazję i szybko wskakujesz do łodzi. "
+        , "Szybko odwiązujesz cumę i zaczynasz wiosłować. \n"
+        ]
+
+-- time
+
+deductTime state t = state{time  = (time state) -t}
+
+checkTime :: StanGry3 -> IO(StanGry3)
+checkTime state = do
+    let hours = time state
+    if hours <= 0 then do
+        printRed [
+            "Słońce wyłoniło się już w pełni nad horyzont. Wiesz, że o tej porze w więzieniu jest pobudka."
+            , "Z gmachu więzienia wydobywa się wycie syren. Wiedzą o twojej uciecze i mają cię jak na dłoni..."
+            , "Przynajmniej spróbowałeś ..."
+            ]
+        die ""
+        return state {location = "dead"}
+    else if hours == 5 then do
+        printRed ["Zostało ci 5 godzin"]
+        return state
+    else if hours == 1 then do
+        printRed [
+            "Horyzont zaczyna odmieniać niewyraźna łuna światła."
+            , "Za niespełna godzinę straznicy odkryją twoją ucieczkę, ale ty będziesz wtedy już daleko... racja?"
+            ]
+        return state
+    else do
+        printRed ["Zostały ci " ++ show hours ++ " godziny!"]
+        return state
+
+-- wait
+
+waitAt :: StanGry3 -> String -> StanGry3
+waitAt state "fence" = st {canFence =True}
+    where st = deductTime state 2
+
+waitAt state "docks" = st {guardsPresent = False}
+    where st = deductTime state 2
+
+waitAt state _ = deductTime state 1
+
+-- by god use st <- waitWrap when reading state
+wait state = do
+    waitText (location state)
+    return ( waitAt state (location state))
+
+-- return  (location state)
+
+waitText :: String -> IO()
+waitText "fence" = do
+    printGreen ["\nCzekasz i obserwujesz sposób poruszania się świateł. Po kilku cyklach jesteś pewien swojej oceny - masz okazję do przekroczenia ogrodzenia."]
+
+waitText "docks" = do
+    printYellow [
+        "Usiadłeś w miejscu, którego nie skanują reflektory i czekasz... "
+        , "Po dłuższej chwili jeden ze strażników zaczyna głośno narzekać, że na tym posterunku nic się nigdy nie dzieje. "
+        , "Przysłuchujesz się rozmowie i z radością przyjmujesz ich decyzję o skoczeniu po karty.\n"
+        ]
+    printGreen ["Strażnicy odchodzą, masz okazję do działania."]
+
+waitText _ = do
+    printYellow ["zmarnowałeś nieco czasu."]
+
+-- look
+
+look :: StanGry3 -> IO(StanGry3)
+look state = do
+    describeDispatch state
+    st <- checkTime state
+    return st
+
+describeDispatch :: StanGry3 -> IO()
+describeDispatch state =
+    describe (location state)
+
+describe :: String -> IO ()
+describe "wall" = do
+    printYellow [
+        "Po dłużącym się zejściu z radością witasz grunt pod stopami."
+        , "Mimo, że mury więzienia już masz za sobą, do pokonania została jeszcze bariera z drutu kolczastego i wody zatoki San Francisco.\n\n"
+        , "Noc niedługo się skończy, a wraz z nią twoja szansa na ucieczkę. "
+        , "Wiesz, że nie masz za dużo czasu.\n\n"]
+    printGreen ["Na południe od ciebie znajduje się ogrodzenie z drutu."]
+
+describe "fence" = do
+    printYellow [
+        "Przed tobą znajduje się bariera wykonana z drutu kolczastego otaczająca budynek więzienny."
+        , "Teren wokół niej przeszukują reflektory. Wiesz, że jak cię zobaczą, to koniec. Strzelcy w wieżach strażniczych mają rozkazy zabijać na miejscu."
+        , "Sam drut byłby dość nieprzyjemną przeszkodą, ale wizja dostania kulką powoduje konieczność przemyślanego podejścia do problemu.\n"
+        , "Ale najpierw musisz przedostać się przez płot. \n\n"
+        , "Reflektory obracają się w stałym tempie. Ich droga jest przewidywalna.\n"
+        ]
+    printBlue [
+        "Jeśli spędzisz trochę czasu, znajdziesz moment kiedy nikt nie patrzy na kawałek płotu na tyle długo, by się przeprawić.\n"
+        ,"Słyszałeś o miejscu, którego nie dosięgają reflektory. "
+        ]
+    printYellow ["Jeśli udało by ci się je znaleźć, to drut nie powinien sprawiać większych kłopotów.\n\n"]
+    printGreen [
+        "Powinno być gdzieś na wschód..."
+        , "Na południu znajduje sie plaża"
+        ]
+
+describe "blindspot" = do
+    printYellow [
+        "Ostrożnie poruszasz się przy murze więzienia dopóki nie znajdziesz się w okolicy o której słyszałeś. "
+        , "Rzeczywiście, reflektory omijają to miejsce! \n"
+        ]
+    printGreen ["Spokojnie możesz tu przekroczyć ogrodzenie i udać się na południe, na plażę."]
+
+describe "beach" = do
+    printYellow [
+        "Czarna tafla wody rozciąga się coraz szerzej przed twoimi oczami. "
+        , "Nocna cisza przerywana jest ciągłym szumem fal rozbijających się o brzeg. "
+        , "Pod twoimi stopami czujesz szorstkie wyboiste kamyki. "
+        , "Dotarłeś do plaży.\n\n"
+        , "Kilka godzin jakie ci pozostało zmusza cię do wybrania jednej drogi.\n\n"
+        ]
+    printBlue [
+        "Masz przygotowany improwizowany ponton"
+        , "Wystarczy go tylko napompować i odpłynąć\n"
+        , "W kieszeni nadal znajduje się twoja improwizowana broń. "
+        , "Jeżeli masz trochę szczęścia może będziesz w stanie obezwładnic strażników przy dokach i ukraść motorówkę?\n"
+        ]
+    printGreen ["Na zachód - doki, na północ ogrodzenie."]
+
+describe "docks" = do
+    printYellow [
+        "Bardzo ostrożnymi ruchami, idziesz w stronę doku. Droga jest ciężka i długa. "
+        , "Każda minuta obłożona jest ryzykiem wykrycia, każdy krok musi być wyliczony tak aby nie wejść w snop światła reflektorów. "
+        , "Mimo tego, udaje ci się. \n"
+        , "Docierasz do doków.\n"
+        , "Dookoła molo kręci się para strażników. Na twoje szczęście, nikt się ciebie tu nie spodziewa."
+        , "To daje ci okazję. "
+        , "Możesz spróbować ukraść łódź, ale nieważne jak szybko to zrobisz i tak zostaniesz zauważony tak długo jak strażnicy tu stoją. \n\n"
+        ]
+    printBlue [
+        "Możesz poczekać na zmianę warty, przy odrobinie szczęścia tych dwoje postanowi zrobić sobie fajrant wcześniej.\n"
+        , "Masz też swoją broń. Może w końcu jest szansa jej użyć...\n\n"
+        ]
+    printGreen ["Na południe - morze, na wschód - plaża."]
+
+describe "sea" = do
+    printYellow [
+        "Wypłynąłeś na otwartą wodę."
+        , "Nie możesz uwierzyć swojemu szczęściu, serce łomocze ci z podniecenia. "
+        , "Mimo, że opuszczasz już wyspę nie oznacza to jeszcze spokoju. "
+        , "Nadal ryzykujesz, że dzień zastanie cię na otwartej wodzie. "
+        , "Wtedy gliny bardzo szybko zrobią z tobą porządek. "
+        , "Twoja ucieczka prawie dobiegła końca. Została tylko kwestia gdzie popłynąć...\n\n"
+        ]
+    printGreen [
+        "Na południu rozciągają się doki i plaże San Francisco, może uda ci się wtopić w tłum jeśli masz cywilne ubrania.\n"
+        , "Na wschodzie znajduje się niezamieszkała wyspa. Jest na niej kilka starych fortów w których mógłbyś się schować na pewien czas.\n"
+        , "Na zachodzie jest nadbrzeze, twój kontakt obiecał że będzie tam czekać.\n"
+        ]
+
+describe "island" = do
+    printYellow [
+        "Płyniesz w stronę pobliskiej wyspy Angel Island. "
+        , "Przeprawa wydaje się trwać znacznie dłużej niż powinna. Emocje szarpią twoimi nerwami.\n\n"
+        , "Dopływasz do plaży wyspy. \n"
+        , "Uciekłeś, na razie. "
+        , "Rosnący tu las i stare budynki dadzą ci schronienie na jakiś czas. Zdołasz przeczekać dzień lub kilka, ale co dalej? "
+        , "Nie masz jedzenia ani pitnej wody. Będziesz musiał niedługo popłynąć na ląd, ale tam będą cię szukać. "
+        , "Wyciągasz ponton na brzeg. Wschodzące słońce pomaga ci szukać miejsca na kryjówkę.\n\n"
+        ]
+
+describe "shore" = do
+    printYellow [
+        "Płyniesz w stronę zatoki Kirbiego."
+        , "Przeprawa wydaje się trwać znacznie dłużej niż powinna. Emocje szarpią twoimi nerwami.\n\n"
+        , "Dopływasz do brzegu"
+        , "Przed tobą widnieją stare fortyfikacje nadbrzeżne wyrastające ze stromej skarpy."
+        , "Dziurawisz swój ponton i topisz go kilka metrów od brzegu. To powinno opóźnić pościg, na jakiś czas."
+        , "Niedaleko powinien czekać twój znajomy. "
+        , "Jeśli rzeczywiście sie pojawił, nie powinieneś mieć dziś więcej trudności. "
+        , "Zaoferował przetrzymanie cie kilka tygodni w bezpiecznym miejscu, ale dalej co? "
+        , "Nie wrócisz do normalnego życia, nie w tym kraju. "
+        , "Z rozmyśleń wybudza cię dźwięk uruchamianego silnika. Kierujesz się do samochodu na skraju drogi...\n\n "
+        ]
+
+describe "city" = do
+    printYellow [
+        "Płyniesz w stronę świateł San francisco. "
+        , "Przeprawa wydaje się trwać znacznie dłużej niż powinna. Emocje szarpią twoimi nerwami.\n\n"
+        , "Dopływasz do turystycznego molo niedaleko Golden Gate Beach. "
+        , "Nie spodziewasz się tu dużej ilości ludzi tak blisko do świtu. \n\n"
+        , "Wychodzisz na brzeg\n\n"
+        , "Teraz wystarczy wydostać się z miasta. \n\n"
+        ]
+    printBlue [
+        "Gdzieś niedaleko musi znajdowac się jakiś przystanek autobusowy. "
+        , "Możesz wsiąść do byle jakiego i pojechać najdalej jak to możliwe. "
+        , "Masz na sobie cywilne ubrania więc nikt nie powinien cię natychmiast rozpoznać.\n\n"
+        , "Zawsze możesz też ukraść samochód.\n\n"
+        ]
+    printGreen [
+        "Przystanek jest na wschodzie, parking na zachodzie"
+        ]
+
+describe "bus" = do
+    printYellow [
+        "Czekasz na przystanku kilkanaście minut, aż przyjedzie autobus. "
+        , "Drzwi otwierają się, a za kierownica siedzi stary kruchy mężczyzna. "
+        , "Wydaje się zmęczony...\n "
+        , "dzięki czemu nie zauważa, że nie kupujesz biletu."
+        , "Widocznie uznał, że masz czasowy... albo nie chce się awanturować."
+        ]
+
+describe "car" = do
+    printYellow [
+        "Na pobliskim parkingu stoi kilka aut. Zbliżając się dostrzegasz w kilku z nich śpiących ludzi. "
+        , "Po otaczającej cię woni wnioskujesz, że są to imprezowicze. "
+        , "Próbujesz szczęścia z kilkoma samochodami, dopóki nie znajdujesz tego czego szukasz. Ktoś zapomniał zamknąć tylnych drzwi. "
+        , "Szybko wchodzisz do auta i przeciskasz się na siedzenie kierowcy. "
+        , "Na twoje nieszczęście, kiedy próbujesz odpalić zwierając przewody uruchamia się alarm."
+        ]
+
+-- win lose die
+
+win = do
+    printYellow ["Z twojego starego domu dobiega odległe wycie syren..."]
+    printGreen ["Gratuluje! Udało ci się uciec z więzienia!"]
+
+lose = do
+    printRed ["Mimo twoich starań, twój plan nie powiódł się na jego ostatnim etapie."]
+
+die "fence" = do
+    printYellow [
+        "Rzucasz się na ogrodzenie, gdy tylko światło reflektora się od niego odsuwa. "
+        , "Niestety źle wybrałeś chwilę i zanim wspiąłeś się na połowę wysokości otacza cię snop światła."
+        , "Słyszysz syreny alarmowe...\n\n"
+        ]
+    printRed ["Umierasz, koniec gry"]
+
+die "docks" = do
+    printYellow [
+        "Udaje ci się zakraść niedaleko jednego ze strażników. Jednak gdy jest on na wyciągnięcie ręki drugi obraca się w twoją stronę. "
+        , "Rzucasz się w stronę łodzi w akcie desperacji. Skaczesz i wpadasz do niej z impetem, ale z pomostu słyszysz: Wyłaź! Na ziemię! Podnoś ręce!'."
+        ]
+    printRed ["Umierasz, koniec gry"]
+
+die _ = do
+    printRed ["Umierasz, koniec gry"]
+
+
+-- game loop
+
+readCmd = do
+    putStr $ "\x1b[32m" ++ " > " ++ "\x1b[0m"
+    cmd <- getLine
+    return cmd
+
+gameLoop :: StanGry3 -> IO()
+gameLoop state = do
+    describeDispatch state
+    cmd <- readCmd
+    printRed [cmd]
+    --let next_state = state{}
+    gameLoop state
+
+czesc3 :: IO ()
+czesc3 = do
+    let initState = StanGry3{
+        location = "wall",
+        inventory = ["ponton"],
+        canWater = False,
+        canFence = False,
+        guardsPresent = True,
+        warnedFence = False,
+        warnedDocks = False,
+        time = 5
+    }
+    printGreen ["loaded \n"]
+    gameLoop initState
+
+
+-- st = State{location = "wall",inventory = ["ponton"],canWater = False,canFence = False,guardsPresent = True, warnedFence= False, warnedDocks = False, time = 5}
 
 
 main :: IO ()
 main = do
         -- czesc 1
-        wypiszDialogStartowy
-        instrukcje tekstInstrukcje1
-        evalStateT ( idz Cela >> petlaGry) stanPoczatkowy
+        -- wypiszDialogStartowy
+        -- instrukcje tekstInstrukcje1
+        -- evalStateT ( idz Cela >> petlaGry) stanPoczatkowy
         -- czesc 2
         czesc2
+        -- czesc 3
+        czesc3
+        
