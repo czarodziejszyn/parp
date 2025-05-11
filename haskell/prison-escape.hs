@@ -16,18 +16,23 @@ import System.Exit
 -------------
 
 
+-- struktura do reprezentacji miejsc
 data Miejsce = Biblioteka | Cela | Pralnia | Spacerniak | Stolowka
     deriving (Show, Eq, Ord, Enum)
 
 
+-- struktura do reprezentacji przedmiotow
 data Przedmiot = Atlas | Drut | Farba | Jablko | Klej | Kontakt | Material | Mydlo | Nozyczki | Odkurzacz | Pamietnik | Papier | Pizama | Plaszcze | Sztucce | Sznurek | Srubokret | Ubrania | Wlosy
     deriving (Show, Eq, Ord)
 
 
+-- struktura do reprezentacji postaci
 data Postac = Redding | Bibliotekarz | Klawisz | Kucharz
     deriving (Show, Eq, Ord)
 
 
+-- struktura do trzymania informacji o grze
+-- aktualne miejsce gracza, przedmioty w ekwipunku, przedmioty w danej lokacji, postacie w danej lokacji, dialogi danych postaci, lista przedmiotow potrzebnych do ucieczki
 data StanGry = StanGry
     { miejsceGracza :: Miejsce
     , ekwipunek :: [Przedmiot]
@@ -38,6 +43,7 @@ data StanGry = StanGry
     }
 
 
+-- ustawienia z poczatkowego stanu gry
 stanPoczatkowy :: StanGry
 stanPoczatkowy = StanGry
     { miejsceGracza = Cela
@@ -68,6 +74,7 @@ stanPoczatkowy = StanGry
 type Gra a = StateT StanGry IO a
 
 
+-- wypisywanie tekstu na konsole w danym kolorze
 wypiszKolor :: String -> String -> IO ()
 wypiszKolor kolor tekst = putStrLn $ koloruj kolor tekst
   where
@@ -81,6 +88,7 @@ wypiszKolor kolor tekst = putStrLn $ koloruj kolor tekst
     koloruj _         txt = txt
 
 
+-- opisy miejsc
 opis :: Miejsce -> String
 opis Biblioteka = "Jesteś w bibliotece."
 opis Cela = "Jesteś w swojej celi."
@@ -89,9 +97,7 @@ opis Spacerniak = "Jesteś na spacerniaku."
 opis Stolowka = "Jesteś na więziennej stołówce."
 
 
-
-
-
+-- zmiana miejsca na zadane i wyswietlenie o nim informacji
 idz :: Miejsce -> Gra ()
 idz miejsce = do
     state <- get
@@ -100,9 +106,11 @@ idz miejsce = do
     rozejrzyj
 
 
+-- funckja wyswietlajaca przedmioty i osoby z aktualnej lokacji gracza
 rozejrzyj :: Gra ()
 rozejrzyj = do
     StanGry {..} <- get
+    -- listy przedmiotow i postaci z aktualnego stanu gry
     let przedmioty = fromMaybe [] (Map.lookup miejsceGracza przedmiotyLokacji)
         postacie = fromMaybe [] (Map.lookup miejsceGracza postacieLokacji)
     liftIO $ do
@@ -118,6 +126,7 @@ rozejrzyj = do
             else return ()
 
 
+-- branie przedmiotow do ekwipunku z uwzglednieniem przedmiotow specjalnych, ktore wywoluja inna akcje
 wez :: Przedmiot -> Gra ()
 wez przedmiot = do
     state@StanGry {..} <- get
@@ -180,6 +189,7 @@ wez przedmiot = do
             else liftIO $ wypiszKolor "Red" $ "Nie ma tu przedmiotu: " ++ show przedmiot
 
 
+-- uzycie przedmiotu z ekwipunku
 uzyj :: Przedmiot -> Gra ()
 uzyj przedmiot = do
     state@StanGry {..} <- get
@@ -189,6 +199,7 @@ uzyj przedmiot = do
                 liftIO $ do
                     wypiszKolor "White" $ "Potrzebne do ucieczki:"
                     mapM_ (\przedmiot -> wypiszKolor "White" $ "- " ++ show przedmiot) przedmiotyDoUcieczki
+            -- nozyczki mozna uzyc tylko w celi, gdy nie ma sie jeszcze w ekwipunku wlosow
             Nozyczki -> if miejsceGracza == Cela && Wlosy `notElem` ekwipunek
                 then do
                     put state {ekwipunek = Wlosy : ekwipunek}
@@ -198,6 +209,7 @@ uzyj przedmiot = do
     else liftIO $ wypiszKolor "Red" $ "Nie masz przedmiotu: " ++ show przedmiot
 
 
+-- rozmowa z postaciami, wypisanie ich dialogow
 porozmawiaj :: Postac -> Gra ()
 porozmawiaj postac = do
     state@StanGry {..} <- get
@@ -206,12 +218,14 @@ porozmawiaj postac = do
         then do
             liftIO $ do
                 wypiszDialog (show postac) $ fromMaybe "" (Map.lookup postac dialogi)
+            -- pierwsza rozmowa z reddingiem dodaje atlas do biblioteki
             when (postac == Redding && Kontakt `notElem` ekwipunek && Atlas `notElem` ekwipunek && not (Atlas `elem` fromMaybe [] (Map.lookup Biblioteka przedmiotyLokacji))) $ do
                 let nowePrzedmiotyLokacji = Map.adjust (Atlas :) Biblioteka przedmiotyLokacji
                 put state { przedmiotyLokacji = nowePrzedmiotyLokacji}
         else liftIO $ wypiszKolor "Red" $ "Nie ma tu nikogo o imieniu: " ++ show postac
 
 
+-- wyswietlenie ekwipunku, zwraca bool, bo gdy w ekwipunku wszystko do ucieczki to koniec tej czesci gry
 pokazEkwipunek :: Gra Bool
 pokazEkwipunek = do
     StanGry {..} <- get
@@ -223,6 +237,7 @@ pokazEkwipunek = do
     sprawdzUcieczke
 
 
+-- funkcja wywolywana powyzej, zwraca true gdy wszystko do ucieczki w ekwipunku
 sprawdzUcieczke :: Gra Bool
 sprawdzUcieczke = do
     StanGry {..} <- get
@@ -235,6 +250,7 @@ sprawdzUcieczke = do
         else return False
 
 
+-- wypisanie dialogu startowego
 wypiszDialogStartowy :: IO ()
 wypiszDialogStartowy = do
     let dialogStartowy =
@@ -244,9 +260,11 @@ wypiszDialogStartowy = do
             , ("Andy Dufrasne", "Jak już mówiłem, zostałem wrobiony. Nigdy nie wypchnąłbym kodu przed pokryciu jego przynajmniej dziewięćdziesięciu procent testami jednostkowymi.")
             , ("Sędzia", "Panie Andrew Dufrasne, za pisanie brzydkiego kodu zostaje Pan skazany na dwa dożywocia w więzieniu o zaostrzonym rygorze!")
             ]
+    -- uncurry do wydobycia z krotki stringow
     mapM_ (uncurry wypiszDialog) dialogStartowy
 
 
+-- pisanie dialogow w zadanym formacie graficznym
 wypiszDialog :: String -> String -> IO ()
 wypiszDialog postac tekst = do
     let cyan   = "\x1b[36m"
@@ -256,6 +274,7 @@ wypiszDialog postac tekst = do
     putStrLn $ white ++ tekst ++ reset
 
 
+-- tekst instrukcji do pierwszej czesci w tablicy
 tekstInstrukcje1 :: [String]
 tekstInstrukcje1 = [
     "Dostępne komendy:"
@@ -271,6 +290,7 @@ tekstInstrukcje1 = [
     ]
 
 
+-- tekst mapy do pierwszej czesci
 mapaWiezienia :: [String]
 mapaWiezienia = [
     "Miejsca, do których możesz przejść:"
@@ -282,6 +302,7 @@ mapaWiezienia = [
     ]
 
 
+-- glowna petla gry, wczytywanie komend i wywolywanie odpowiednich komend, prawie kazda funkcja zwraca false zeby zaznaczyc brak konca rozgrywki
 petlaGry :: Gra ()
 petlaGry = do
     liftIO $ putStr "> "
@@ -1331,9 +1352,9 @@ czesc3 = do
 main :: IO ()
 main = do
         -- czesc 1
-        -- wypiszDialogStartowy
-        -- instrukcje tekstInstrukcje1
-        -- evalStateT ( idz Cela >> petlaGry) stanPoczatkowy
+        wypiszDialogStartowy
+        instrukcje tekstInstrukcje1
+        evalStateT ( idz Cela >> petlaGry) stanPoczatkowy
         -- czesc 2
         czesc2
         -- czesc 3
