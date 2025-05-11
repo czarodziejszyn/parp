@@ -324,7 +324,7 @@ petlaGry = do
             "mydlo" -> wez Mydlo >> return False
             "srubokret" -> wez Srubokret >> return False
             _ -> liftIO ( wypiszKolor "Red" $ "Nie ma tu przedmiotu: " ++ przedmiot ) >> return False
-        ["exit"] -> return True
+        ["exit"] -> liftIO $ exitSuccess >> return False
         _ -> liftIO $ wypiszKolor "Red" "Nieznana komenda!" >> return False
     unless koniecCzesci petlaGry
 
@@ -658,6 +658,7 @@ wykonajKomende wejscie
   | wejscie == "ekwipunek" = do
     stan <- get
     liftIO $ ukazEkwipunek stan
+  | wejscie == "exit" = liftIO $ exitSuccess
 
 
 
@@ -1230,7 +1231,8 @@ czesc3 = do
         warnedDocks = False,
         time = 5
     }
-    printGreen ["loaded \n"]
+    --printGreen ["loaded \n"]
+    _ <- tekstInstrukcje3 initState
     gameLoop initState
 
 
@@ -1240,9 +1242,9 @@ czesc3 = do
 main :: IO ()
 main = do
         -- czesc 1
-        -- wypiszDialogStartowy
-        -- instrukcje tekstInstrukcje1
-        -- evalStateT ( idz Cela >> petlaGry) stanPoczatkowy
+        wypiszDialogStartowy
+        instrukcje tekstInstrukcje1
+        evalStateT ( idz Cela >> petlaGry) stanPoczatkowy
         -- czesc 2
         czesc2
         -- czesc 3
