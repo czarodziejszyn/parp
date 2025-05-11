@@ -801,10 +801,6 @@ data StanGry3 = StanGry3 {
     time :: Int
 }
 
--- inventory
-
-checkInventory state item = elem item (inventory state)
-
 -- move
 
 moveInternal :: String -> String -> String
@@ -854,7 +850,7 @@ determine state "docks" = do
         playerDie "docks"
         return state -- to keep signature
 
-
+warn :: String -> IO()
 warn "fence" = do
     printRed [
         "Na pewno chcesz rzucić się przez płot tu i teraz? ",
@@ -866,12 +862,14 @@ warn "docks" = do
             "Na pewno chcesz pójść do łodzi mimo obecności strażników?\n"
         ]
 
+crossFenceText :: IO()
 crossFenceText = do
     printYellow [
         "Wyczekujesz najdłuższego okna i wspinasz sie na płot. "
         , "Po sporym wysiłku spadasz na drugą stronę.\n"
         ]
 
+getBoatText :: IO()
 getBoatText = do
     printYellow [
         "Wykorzystujesz swoją okazję i szybko wskakujesz do łodzi. "
@@ -880,6 +878,7 @@ getBoatText = do
 
 -- time
 
+deductTime :: StanGry3 -> Int -> StanGry3
 deductTime state t = state{time  = (time state) -t}
 
 checkTime :: StanGry3 -> IO(StanGry3)
@@ -917,7 +916,6 @@ waitAt state "docks" = st {guardsPresent = False}
 
 waitAt state _ = deductTime state 1
 
--- by god use st <- waitWrap when reading state
 wait state = do
     waitText (location state)
     return ( waitAt state (location state))
@@ -1100,6 +1098,7 @@ describe "car" = do
 
 -- items
 
+fightText :: IO()
 fightText = do
     printYellow [
         "Strażnicy nie są przygotowani na twój atak. "
@@ -1109,6 +1108,7 @@ fightText = do
         ]
     printGreen ["Jesteś sam na doku..."]
 
+floatText :: IO()
 floatText = do
     printYellow [
         "Po dłuższym czasie pompowania ponton nabrał kształtu. "
