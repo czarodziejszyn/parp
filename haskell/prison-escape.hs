@@ -828,7 +828,11 @@ move state dir = do
                 ]
             return state
         else do
-            return state {location = loc}
+            if loc == "sea" then do
+                let st = deductTime state 1
+                return st {location = loc}
+            else
+                return state{location = loc}
 
 
 
@@ -1134,7 +1138,8 @@ use state "ponton" = do
     if (location state) == "beach" then do
         if not (canWater state) then do
             describe "float"
-            return state{canWater = True}
+            let st = deductTime state 2
+            return st{canWater = True}
         else do
             printRed ["Ponton jest już napompowany!"]
             return state
@@ -1144,6 +1149,7 @@ use state "ponton" = do
 
 use state _ = do
     printRed ["Nie masz tego przedmiotu"]
+    return state
 
 
 -- win lose die - write text and end program
