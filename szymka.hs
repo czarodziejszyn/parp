@@ -855,7 +855,7 @@ determine state "fence" = do
         return state{warnedFence = True}
     else do
         playerDie "fence"
-        return state{location = "dead"}
+        return state -- to keep signature
 
 determine state "docks" = do
     if not (guardsPresent state) then do
@@ -866,7 +866,7 @@ determine state "docks" = do
         return state{warnedDocks = True}
     else do
         playerDie "docks"
-        return state{location = "dead"}
+        return state -- to keep signature
 
 
 warn "fence" = do
@@ -906,7 +906,7 @@ checkTime state = do
             , "Przynajmniej spróbowałeś ..."
             ]
         playerDie ""
-        return state {location = "dead"}
+        return state -- to keep signature
     else if hours == 5 then do
         printRed ["Zostało ci 5 godzin"]
         return state
@@ -1231,7 +1231,6 @@ gameLoop state = do
     describeDispatch state
     checkTime state
     st <- interpretCmd state
-    --let next_state = state{}
     gameLoop st
 
 czesc3 :: IO ()
