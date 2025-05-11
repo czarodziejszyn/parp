@@ -1,0 +1,766 @@
+{-# LANGUAGE RecordWildCards #-}
+
+import Control.Monad.State
+import Control.Monad (unless)
+import Control.Monad (when)
+import qualified Data.Map as Map
+import Data.Maybe (fromMaybe)
+import Data.List (intercalate)
+import System.IO
+import Data.List (isPrefixOf, delete, isInfixOf)
+
+
+-------------
+-- czesc 1 --
+-------------
+
+
+data Miejsce = Biblioteka | Cela | Pralnia | Spacerniak | Stolowka
+    deriving (Show, Eq, Ord, Enum)
+
+
+data Przedmiot = Atlas | Drut | Farba | Jablko | Klej | Kontakt | Material | Mydlo | Nozyczki | Odkurzacz | Pamietnik | Papier | Pizama | Plaszcze | Sztucce | Sznurek | Srubokret | Ubrania | Wlosy
+    deriving (Show, Eq, Ord)
+
+
+data Postac = Redding | Bibliotekarz | Klawisz | Kucharz
+    deriving (Show, Eq, Ord)
+
+
+data StanGry = StanGry
+    { miejsceGracza :: Miejsce
+    , ekwipunek :: [Przedmiot]
+    , przedmiotyLokacji :: Map.Map Miejsce [Przedmiot]
+    , postacieLokacji :: Map.Map Miejsce [Postac]
+    , dialogi :: Map.Map Postac String
+    , przedmiotyDoUcieczki :: [Przedmiot]
+    }
+
+
+stanPoczatkowy :: StanGry
+stanPoczatkowy = StanGry
+    { miejsceGracza = Cela
+    , ekwipunek = []
+    , przedmiotyLokacji = Map.fromList
+        [ (Biblioteka, [Klej, Papier])
+        , (Cela, [Mydlo, Pamietnik, Pizama])
+        , (Pralnia, [Odkurzacz, Plaszcze, Ubrania])
+        , (Spacerniak, [Farba])
+        , (Stolowka, [Sztucce])
+        ]
+    , postacieLokacji = Map.fromList
+        [ (Biblioteka, [Bibliotekarz])
+        , (Pralnia, [Klawisz])
+        , (Spacerniak, [Redding])
+        , (Stolowka, [Kucharz])
+        ]
+    , dialogi = Map.fromList
+        [ (Bibliotekarz, "Ciii... Próbuję się skupić na tej książcę o relacyjnych bazach danych.")
+        , (Klawisz, "Nie masz dziś zmiany w pralni? Lepiej się pośpiesz!")
+        , (Kucharz, "To samo co zwykle?")
+        , (Redding, "Czyli próbujesz uciec i potrzebujesz kogoś na zewnątrz do pomocy? Znajdź mi w bibliotece atlas, a w zamian zobaczę co da się zrobić.")
+        ]
+    , przedmiotyDoUcieczki = [Drut, Farba, Kontakt, Material, Mydlo, Papier, Plaszcze, Srubokret, Sznurek, Sztucce, Ubrania, Wlosy]
+    }
+
+
+type Gra a = StateT StanGry IO a
+
+
+wypiszKolor :: String -> String -> IO ()
+wypiszKolor kolor tekst = putStrLn $ koloruj kolor tekst
+  where
+    reset = "\x1b[0m"
+    koloruj "Red"     txt = "\x1b[31m" ++ txt ++ reset
+    koloruj "Green"   txt = "\x1b[32m" ++ txt ++ reset
+    koloruj "Cyan"    txt = "\x1b[36m" ++ txt ++ reset
+    koloruj "Blue"    txt = "\x1b[34m" ++ txt ++ reset
+    koloruj "White"   txt = "\x1b[37m" ++ txt ++ reset
+    koloruj "Magenta" txt = "\x1b[35m" ++ txt ++ reset
+    koloruj _         txt = txt  
+
+
+opis :: Miejsce -> String
+opis Biblioteka = "Jesteś w bibliotece."
+opis Cela = "Jesteś w swojej celi."
+opis Pralnia = "Jesteś w pralni."
+opis Spacerniak = "Jesteś na spacerniaku."
+opis Stolowka = "Jesteś na więziennej stołówce."
+
+
+
+
+
+idz :: Miejsce -> Gra ()
+idz miejsce = do
+    state <- get
+    put state {miejsceGracza = miejsce}
+    liftIO $ wypiszKolor "Green" (opis miejsce)
+    rozejrzyj
+
+
+rozejrzyj :: Gra ()
+rozejrzyj = do
+    StanGry {..} <- get
+    let przedmioty = fromMaybe [] (Map.lookup miejsceGracza przedmiotyLokacji)
+        postacie = fromMaybe [] (Map.lookup miejsceGracza postacieLokacji)
+    liftIO $ do
+        if null przedmioty 
+            then wypiszKolor "Blue" "Nie ma tu nic ciekawego."
+            else do
+                wypiszKolor "Magenta" "Widzisz: "
+                mapM_ (\przedmiot -> wypiszKolor "Magenta" $ "- " ++ show przedmiot) przedmioty
+        if not (null postacie)
+            then do
+                wypiszKolor "Cyan" "Spotykasz tutaj: "
+                mapM_ (\postac -> wypiszKolor "Cyan" $ "- " ++ show postac) postacie
+            else return ()
+
+
+wez :: Przedmiot -> Gra ()
+wez przedmiot = do
+    state@StanGry {..} <- get
+    let przedmiotyTutaj = fromMaybe [] (Map.lookup miejsceGracza przedmiotyLokacji)
+    if przedmiot `elem` przedmiotyTutaj
+        then case (przedmiot, miejsceGracza) of
+            -- przypadek dla pizamy
+            (Pizama, Cela) | Nozyczki `notElem` ekwipunek && not (Nozyczki `elem` fromMaybe [] (Map.lookup Biblioteka przedmiotyLokacji)) -> do
+                let nowePrzedmiotyLokacji = Map.adjust (Nozyczki :) Biblioteka przedmiotyLokacji 
+                put state { przedmiotyLokacji = nowePrzedmiotyLokacji}
+                liftIO $ wypiszKolor "Red" "Bezużyteczna piżama... chyba że znajdziesz coś czym wytnie się z niej sznurek i materiał."
+            (Pizama, Cela) | Nozyczki `elem` ekwipunek && Sznurek `notElem` ekwipunek && Material `notElem` ekwipunek -> do
+                let nowePrzedmiotyTutaj = filter (/= Pizama) przedmiotyTutaj
+                    nowePrzedmiotyMapa = Map.insert miejsceGracza nowePrzedmiotyTutaj przedmiotyLokacji
+                put state { ekwipunek = Sznurek : Material : ekwipunek, przedmiotyLokacji = nowePrzedmiotyMapa }
+                liftIO $ wypiszKolor "Green" "Wyciąłeś z piżamy sznurek i materiał."
+            (Pizama, Cela) | Nozyczki `elem` fromMaybe [] (Map.lookup Biblioteka przedmiotyLokacji) -> do
+                liftIO $ wypiszKolor "Red" "Bezużyteczna piżama... chyba że znajdziesz coś czym wytnie się z niej sznurek i materiał."
+
+            -- przypadek dla odkurzacza
+            (Odkurzacz, Pralnia) | Srubokret `notElem` ekwipunek && not (Srubokret `elem` fromMaybe [] (Map.lookup Spacerniak przedmiotyLokacji)) -> do
+                let nowePrzedmiotyLokacji = Map.adjust (Srubokret :) Spacerniak przedmiotyLokacji
+                put state { przedmiotyLokacji = nowePrzedmiotyLokacji }
+                liftIO $ wypiszKolor "Red" "Odkurzacz. Przydałoby się jakoś go rozkręcić, żeby dostać się do wnętrzności..."
+            (Odkurzacz, Pralnia) | Srubokret `elem` ekwipunek && Drut `notElem` ekwipunek -> do
+                let nowePrzedmiotyTutaj = filter (/= Odkurzacz) przedmiotyTutaj
+                    nowePrzedmiotyMapa = Map.insert miejsceGracza nowePrzedmiotyTutaj przedmiotyLokacji
+                put state { ekwipunek = Drut : ekwipunek, przedmiotyLokacji = nowePrzedmiotyMapa }
+                liftIO $ wypiszKolor "Green" "Rozkręciłeś odkurzacz i wyjąłeś z niego drut."
+            (Odkurzacz, Pralnia) | Srubokret `elem` fromMaybe [] (Map.lookup Spacerniak przedmiotyLokacji) -> do
+                liftIO $ wypiszKolor "Red" "Odkurzacz. Przydałoby się jakoś go rozkręcić, żeby dostać się do wnętrzności..."
+
+            -- przypadek dla plaszczy
+            (Plaszcze, Pralnia) | Jablko `notElem` ekwipunek && not (Jablko `elem` fromMaybe [] (Map.lookup Stolowka przedmiotyLokacji)) -> do
+                let nowePrzedmiotyLokacji = Map.adjust (Jablko :) Stolowka przedmiotyLokacji
+                put state { przedmiotyLokacji = nowePrzedmiotyLokacji }
+                liftIO $ wypiszKolor "Red" "Klawisz patrzy! Musisz go czymś zająć, może jedzeniem?"
+            (Plaszcze, Pralnia) | Jablko `elem` ekwipunek && Plaszcze `notElem` ekwipunek -> do
+                let nowePrzedmiotyTutaj = filter (/= Plaszcze) przedmiotyTutaj
+                    nowePrzedimotyMapa = Map.insert miejsceGracza nowePrzedmiotyTutaj przedmiotyLokacji
+                put state { ekwipunek = Plaszcze : filter (/= Jablko) ekwipunek, przedmiotyLokacji = nowePrzedimotyMapa }
+                liftIO $ wypiszKolor "Green" "Zająłeś klawisza jabłkiem i zabrałeś płaszcze."
+            (Plaszcze, Pralnia) | Jablko `elem` fromMaybe [] (Map.lookup Stolowka przedmiotyLokacji) -> do
+                liftIO $ wypiszKolor "Red" "Klawisz patrzy! Musisz go czymś zająć, może jedzeniem?"
+
+            -- przypadek dla atlasu
+            (Atlas, Biblioteka) -> do
+                let nowePrzedmiotyTutaj = filter (/= Atlas) przedmiotyTutaj
+                    nowePrzedimotyMapa = Map.insert miejsceGracza nowePrzedmiotyTutaj przedmiotyLokacji
+                    noweDialogi = Map.insert Redding "Super, dzięki za atlas! Sprawę kontaktu możesz uznać za załatwioną." dialogi 
+                put state { ekwipunek = Kontakt : Atlas : ekwipunek, przedmiotyLokacji = nowePrzedimotyMapa, dialogi = noweDialogi }
+                liftIO $ wypiszKolor "Green" $ "Zabrałeś: " ++ show przedmiot
+
+            -- domyslny przypadek
+            _ -> do
+                let nowePrzedmiotyTutaj = filter (/= przedmiot) przedmiotyTutaj
+                    nowePrzedimotyMapa = Map.insert miejsceGracza nowePrzedmiotyTutaj przedmiotyLokacji
+                put state { ekwipunek = przedmiot : ekwipunek, przedmiotyLokacji = nowePrzedimotyMapa }
+                liftIO $ wypiszKolor "Green" $ "Zabrałeś: " ++ show przedmiot
+            else liftIO $ wypiszKolor "Red" $ "Nie ma tu przedmiotu: " ++ show przedmiot
+
+
+uzyj :: Przedmiot -> Gra ()
+uzyj przedmiot = do
+    state@StanGry {..} <- get
+    if przedmiot `elem` ekwipunek
+        then case przedmiot of
+            Pamietnik -> do
+                liftIO $ do
+                    wypiszKolor "White" $ "Potrzebne do ucieczki:"
+                    mapM_ (\przedmiot -> wypiszKolor "White" $ "- " ++ show przedmiot) przedmiotyDoUcieczki
+            Nozyczki -> if miejsceGracza == Cela && Wlosy `notElem` ekwipunek
+                then do
+                    put state {ekwipunek = Wlosy : ekwipunek}
+                    liftIO $ wypiszKolor "Green" "Obciąłeś włosy."
+                else liftIO $ wypiszKolor "Red" "Chcesz obciąć włosy? Mądre... ale zrób to w celi, żeby nikt się nie zainteresował."
+            _ -> liftIO $ wypiszKolor "Red" $ "Nie możesz użyć przedmiotu: " ++ show przedmiot
+    else liftIO $ wypiszKolor "Red" $ "Nie masz przedmiotu: " ++ show przedmiot
+
+
+porozmawiaj :: Postac -> Gra ()
+porozmawiaj postac = do
+    state@StanGry {..} <- get
+    let postacieTutaj = fromMaybe [] (Map.lookup miejsceGracza postacieLokacji)
+    if postac `elem` postacieTutaj
+        then do
+            liftIO $ do
+                wypiszDialog (show postac) $ fromMaybe "" (Map.lookup postac dialogi)
+            when (postac == Redding && Kontakt `notElem` ekwipunek && Atlas `notElem` ekwipunek && not (Atlas `elem` fromMaybe [] (Map.lookup Biblioteka przedmiotyLokacji))) $ do
+                let nowePrzedmiotyLokacji = Map.adjust (Atlas :) Biblioteka przedmiotyLokacji
+                put state { przedmiotyLokacji = nowePrzedmiotyLokacji}
+        else liftIO $ wypiszKolor "Red" $ "Nie ma tu nikogo o imieniu: " ++ show postac
+
+
+pokazEkwipunek :: Gra Bool
+pokazEkwipunek = do
+    StanGry {..} <- get
+    liftIO $ if null ekwipunek
+        then wypiszKolor "Blue" "Twój ekwipunek jest pusty."
+        else  do
+            wypiszKolor "Blue" "Masz przy sobie:"
+            mapM_ (\przedmiot -> wypiszKolor "Blue" $ "- " ++ show przedmiot) ekwipunek
+    sprawdzUcieczke
+
+
+sprawdzUcieczke :: Gra Bool
+sprawdzUcieczke = do
+    StanGry {..} <- get
+    if all (`elem` ekwipunek) przedmiotyDoUcieczki
+        then do
+            liftIO $ do
+                wypiszKolor "White" "Masz wszystko czego potrzeba do ucieczki. Z mydła i skarpetek znalezionych w ubraniach robisz prowizoryczną broń. Pora poukrywać prz    edmioty po celi, żeby nie wzbudzały podejrzeń, poczekać na noc i rozpocząć ucieczkę."
+                wypiszKolor "White" "Otrzymujesz nowy zestaw instrukcji dostępny po wpisaniu polecenia 'instrukcje'."
+            return True
+        else return False
+
+
+wypiszDialogStartowy :: IO ()
+wypiszDialogStartowy = do
+    let dialogStartowy = 
+            [ ("Prokurator", "Niech Pan opowie jak z Pana perspektywy wyglądała rozmowa z szefem tego dnia.")
+            , ("Andy Dufresne", "Był bardzo szorstki. Powiedział, że nikt już nie korzysta z vima, że zmniejsza on moją produktywność i zwolnienie mnie to jego jedyne wyjście.")
+            , ("Prokurator", "Czy po tym incydencie wypchnął Pan na maina gałąź, w której cały kod był pisany w jednej linii, a nazwy funkcji nie oddawały ich działania? Tu przykład: funkcja launch_missle() wypisywała na konsolę 'Hello, World'.")
+            , ("Andy Dufrasne", "Jak już mówiłem, zostałem wrobiony. Nigdy nie wypchnąłbym kodu przed pokryciu jego przynajmniej dziewięćdziesięciu procent testami jednostkowymi.")
+            , ("Sędzia", "Panie Andrew Dufrasne, za pisanie brzydkiego kodu zostaje Pan skazany na dwa dożywocia w więzieniu o zaostrzonym rygorze!")
+            ]
+    mapM_ (uncurry wypiszDialog) dialogStartowy
+
+
+wypiszDialog :: String -> String -> IO ()
+wypiszDialog postac tekst = do
+    let cyan   = "\x1b[36m"
+        white  = "\x1b[37m"
+        reset  = "\x1b[0m"
+    putStr $ cyan ++ postac ++ reset ++ ": "
+    putStrLn $ white ++ tekst ++ reset
+
+
+tekstInstrukcje1 :: [String]
+tekstInstrukcje1 = [
+    "Dostępne komendy:"
+    , "ekwipunek             -- sprawdź czy masz już wszystko do ucieczki."
+    , "idz <miejsce>         -- przejdź do miejsca."
+    , "instrukcje            -- wyświetl te komendy."
+    , "mapa                  -- wyświetl mapę więzienia."
+    , "porozmawiaj <imie>    -- rozpocznij rozmowę z postacią w tej lokacji."
+    , "rozejrzyj             -- rozejrzyj się dookoła."
+    , "uzyj <przedmiot>      -- spróbuj skorzystać z przedmiotu w ekwipunku."
+    , "wez <przedmiot>       -- weź przedmiot z aktualnej lokacji."
+    , "exit                  -- zakończ rozgrywkę i wyjdź."
+    ]
+
+
+mapaWiezienia :: [String]
+mapaWiezienia = [
+    "Miejsca, do których możesz przejść:"
+    , "biblioteka           -- więzienna biblioteka"
+    , "cela                 -- twoja cela"
+    , "pralnia              -- pralnia, tu pracujesz"
+    , "spacerniak           -- miejsce do spotkań z współwięźniami na dworze"
+    , "stolowka             -- więzienna stołówka"
+    ]
+
+
+petlaGry :: Gra ()
+petlaGry = do
+    liftIO $ putStr "> "
+    cmd <- liftIO getLine
+    koniecCzesci <- case words cmd of
+        ["ekwipunek"] -> pokazEkwipunek
+        ["idz", miejsce] -> case miejsce of
+            "biblioteka" -> idz Biblioteka >> return False
+            "cela" -> idz Cela >> return False
+            "pralnia" -> idz Pralnia >> return False
+            "spacerniak" -> idz Spacerniak >> return False
+            "stolowka" -> idz Stolowka >> return False
+            _ -> liftIO $ wypiszKolor "Red" "Nie ma takiego miejsca!" >> return False
+        ["instrukcje"] -> do liftIO $ instrukcje tekstInstrukcje1 >> return False
+        ["mapa"] -> liftIO $ instrukcje mapaWiezienia >> return False
+        ["porozmawiaj", postac] -> case postac of
+            "bibliotekarz" -> porozmawiaj Bibliotekarz >> return False
+            "klawisz" -> porozmawiaj Klawisz >> return False
+            "kucharz" -> porozmawiaj Kucharz >> return False
+            "redding" -> porozmawiaj Redding >> return False
+            _ -> liftIO ( wypiszKolor "Red" $ "Nie ma tu nikogo o imieniu " ++ show postac) >> return False
+        ["rozejrzyj"] -> rozejrzyj >> return False
+        ["uzyj", przedmiot] -> case przedmiot of
+            "pamietnik" -> uzyj Pamietnik >> return False
+            "nozyczki" -> uzyj Nozyczki >> return False
+            _ -> liftIO ( wypiszKolor "Red" $ "Nie można użyć przedmiotu: " ++ show przedmiot ) >> return False
+        ["wez", przedmiot] -> case przedmiot of
+            "atlas" -> wez Atlas >> return False
+            "sztucce" -> wez Sztucce >> return False
+            "ubrania" -> wez Ubrania >> return False
+            "klej" -> wez Klej >> return False
+            "pamietnik" -> wez Pamietnik >> return False
+            "plaszcze" -> wez Plaszcze >> return False
+            "papier" -> wez Papier >> return False
+            "farba" -> wez Farba >> return False
+            "nozyczki" -> wez Nozyczki >> return False
+            "jablko" -> wez Jablko >> return False
+            "odkurzacz" -> wez Odkurzacz >> return False
+            "pizama" -> wez Pizama >> return False
+            "mydlo" -> wez Mydlo >> return False
+            "srubokret" -> wez Srubokret >> return False
+            _ -> liftIO ( wypiszKolor "Red" $ "Nie ma tu przedmiotu: " ++ przedmiot ) >> return False
+        ["exit"] -> return True
+        _ -> liftIO $ wypiszKolor "Red" "Nieznana komenda!" >> return False
+    unless koniecCzesci petlaGry
+
+
+
+-------------
+-- czesc 2 --
+-------------
+-- import Control.Monad.State
+
+
+type Lokacja = String
+type Kierunek = String
+type Rzecz = String
+type StanGry2 = (Lokacja, [(Rzecz, Lokacja)], [Rzecz], Int, Int, [Lokacja])
+type Gra2 a = StateT StanGry2 IO a
+
+tekstInstrukcji :: [String]
+tekstInstrukcji =
+  [ "Dostępne komendy:"
+  , ""
+  , "n. s. e. w.            -- poruszanie się"
+  , "wez <przedmiot>        -- podnieś przedmiot."
+  , "upusc <przedmiot>      -- upuść przedmiot."
+  , "zrob_manekina          -- stwórz manekina."
+  , "poloz_manekina         -- połóż manekina."
+  , "zrob_atrape            -- zrób atrapę wentylacji."
+  , "poloz_atrape           -- umieść atrapę."
+  , "wierc                  -- rozwierć wentylację."
+  , "odkrec                 -- odkręć kratkę."
+  , "rozejrzyj              -- rozejrzyj się."
+  , "ekwipunek              -- sprawdź ekwipunek."
+  , "instrukcje             -- pokaż instrukcje."
+  , "mapa                   -- pokaż mapę celi."
+  , "exit                   -- zakończ grę."
+  , ""
+  ]
+
+schematMapy :: [String]
+schematMapy = 
+    [ "W twojej celi znajdują się następujące miejsca:"
+  , "zlew           "
+  , "srodek celi    "
+  , "lozko          "
+  , "magazyn        "
+  , "krata wentylacyjna "
+  , "toaleta        "
+  , "poludnie "
+  , ""
+  , "                ┌───────────┐"
+  , "                │    lozko  │"
+  , "                └───────────┘"
+  , "                      │"
+  , "                ┌───━─────────┐"
+  , "        ┌─────  │ srodek celi │ ─────┐"
+  , "        │       └─────────────┘      │"
+  , "        │             │              │"
+  , "   ┌────────┐   ┌────────── ┐   ┌────────┐"
+  , "   │ magazyn│   │ zakątek p │   │ toaleta│"
+  , "   └────────┘   └────────── ┘   └────────┘"
+  , "        │                            │"
+  , "   ┌───────────┐                 ┌──────┐"
+  , "   │ wentylacja│                 │ zlew │"
+  , "   └───────────┘                 └──────┘"
+  ]
+
+printBlue, printRed, printYellow, printGreen :: [String] -> IO ()
+printBlue text = putStr $ "\x1b[34m" ++ unlines text ++ "\x1b[0m"
+printRed text = putStr $ "\x1b[31m" ++ unlines text ++ "\x1b[0m"
+printYellow text = putStr $ "\x1b[33m" ++ unlines text ++ "\x1b[0m"
+printGreen text = putStr $ "\x1b[32m" ++ unlines text ++ "\x1b[0m"
+
+opisMiejsca "srodek celi" = wypiszKolor "Green" "Jesteś w centrum swojej celi. Skompletuj ekwipunek do ucieczki."
+opisMiejsca "lozko" = wypiszKolor "Green" "lozko. Może znajdziesz tu coś, z czego zrobisz manekina?"
+opisMiejsca "toaleta" = wypiszKolor "Green" "Jesteś przy toalecie."
+opisMiejsca "magazyn" = wypiszKolor "Green" "Magazynek. Znajdziesz tu narzędzia."
+opisMiejsca "poludnie" = wypiszKolor "Green" "poludnie."
+opisMiejsca "krata wentylacyjna" = wypiszKolor "Green" "Stoisz przy kratce wentylacyjnej. Chyba tędy musisz uciec?"
+opisMiejsca "zlew" = wypiszKolor "Green" "Zlew."
+opisMiejsca "szyb1" = wypiszKolor "Green" "Wpełzasz do ciasnego kanału. Widać coś na północy."
+opisMiejsca "szyb2" = wypiszKolor "Green" "Bardzo ciasno. Przed tobą kratka, którą trzeba odkręcić"
+opisMiejsca "szyb3"  = wypiszKolor "Green" "Brawo udało ci się odkręcić kratkę!! kontynuuj ucieczkę"
+opisMiejsca "szyb4" = wypiszKolor "Green" "Kanał schodzi w dół."
+opisMiejsca "szyb5" = wypiszKolor "Green" "Dalej w dół..."
+opisMiejsca "szyb6" = wypiszKolor "Green" "Przed tobą druga kratka"
+opisMiejsca "szyb7" = wypiszKolor "Green" "Udało ci się z drugą kratką! Duszne, ciasne przejście. Trzeba iść dalej."
+opisMiejsca "szyb8" = wypiszKolor "Green" "Coś słychać nad Tobą... już blisko?"
+opisMiejsca "szyb9" = wypiszKolor "Green" "Pachnie świeżym powietrzem!"
+opisMiejsca "szyb10" = wypiszKolor "Green" "Ostatnia kratka na twojej drodze"
+opisMiejsca "szyb11" = wypiszKolor "Green" "Kanał skręca na zachód. To już prawie koniec."
+opisMiejsca "szyb12" = wypiszKolor "Green" "Widzisz światło!"
+opisMiejsca "dach" = wypiszKolor "Green" "Udało Ci się wyjść na dach! Przed Tobą kable prowadzące w dół. Wciskaj \"s\", aby zejść na dół."
+opisMiejsca "zejscie1" = wypiszKolor "Green" "Zacząłeś schodzić po kablach. Ślisko, ale idzie."
+opisMiejsca "zejscie2" = wypiszKolor "Green" "Jesteś na wysokości około 4. piętra. Trzymaj się mocno!"
+opisMiejsca "zejscie3" = wypiszKolor "Green" "Połowa drogi. Nie ma odwrotu..."
+opisMiejsca "zejscie4" = wypiszKolor "Green" "Już blisko ziemi. Nie puść się!"
+opisMiejsca "zejscie5" = wypiszKolor "Green" "Jeszcze kawałek... już prawie!"
+opisMiejsca "ziemia" = wypiszKolor "Green" "Bezpiecznie dotarłeś na dół. Jesteś wolny!"
+opisMiejsca _ = wypiszKolor "Green" "Nieznana lokacja."
+
+printLines :: [String] -> IO ()
+printLines xs = putStr (unlines xs)
+
+instrukcje :: [String] -> IO ()
+instrukcje = mapM_ (wypiszKolor "White")
+
+
+
+sciezki :: [(Lokacja, Kierunek, Lokacja)]
+sciezki =
+  [ ("srodek celi", "n", "lozko")
+  , ("lozko", "s", "srodek celi")
+  , ("srodek celi", "w", "toaleta")
+  , ("toaleta", "e", "srodek celi")
+  , ("srodek celi", "e", "magazyn")
+  , ("magazyn", "w", "srodek celi")
+  , ("srodek celi", "s", "poludnie")
+  , ("poludnie", "n", "srodek celi")
+  , ("magazyn", "e", "krata wentylacyjna")
+  , ("krata wentylacyjna", "w", "magazyn")
+  , ("toaleta", "w", "zlew")
+  , ("zlew", "e", "toaleta")
+  , ("szyb1", "n", "szyb2")
+  , ("szyb2", "e", "szyb3")
+  , ("szyb3", "e", "szyb4")
+  , ("szyb4", "s", "szyb5")
+  , ("szyb5", "s", "szyb6")
+  , ("szyb6", "n", "szyb7")
+  , ("szyb7", "n", "szyb8")
+  , ("szyb8", "n", "szyb9")
+  , ("szyb9", "n", "szyb10")
+  , ("szyb10", "s", "szyb11")
+  , ("szyb11", "w", "szyb12")
+  , ("szyb12", "n", "dach")
+  , ("dach", "s", "zejscie1")
+  , ("zejscie1", "s", "zejscie2")
+  , ("zejscie2", "s", "zejscie3")
+  , ("zejscie3", "s", "zejscie4")
+  , ("zejscie4", "s", "zejscie5")
+  , ("zejscie5", "s", "ziemia")
+  ]
+
+spelnioneWarunkiUcieczki :: StanGry2 -> Bool
+spelnioneWarunkiUcieczki (lok, ps, eq, _, _, _) =
+  ("manekin", "lozko") `elem` ps &&
+  ("atrapa_wentylacji", "krata wentylacyjna") `elem` ps &&
+  all (`elem` eq) ["srubokret", "plaszcz", "klej"]
+
+-- spelnioneWarunkiUcieczki (lok, ps, eq, _, _, _) = True
+znajdzPrzejscie :: Lokacja -> Kierunek -> StanGry2 -> Maybe Lokacja
+znajdzPrzejscie "krata wentylacyjna" "n" stan
+  | spelnioneWarunkiUcieczki stan = Just "szyb1"
+  | otherwise = Nothing
+
+znajdzPrzejscie "szyb2" "e" (_, _, _, _, _, odk)
+  | "szyb2" `elem` odk = Just "szyb3"
+  | otherwise = Nothing
+
+
+znajdzPrzejscie "szyb6" "n" (_, _, _, _, _, odk)
+  | "szyb6" `elem` odk = Just "szyb7"
+  | otherwise = Nothing
+
+znajdzPrzejscie "szyb10" "s" (_, _, _, _, _, odk)
+  | "szyb10" `elem` odk = Just "szyb11"
+  | otherwise = Nothing
+
+
+znajdzPrzejscie skad kierunek _ = znajdz sciezki
+  where
+    znajdz [] = Nothing
+    znajdz ((z, k, dokad):xs)
+      | z == skad && k == kierunek = Just dokad
+      | otherwise = znajdz xs
+
+
+
+kratkiDoOdkrecenia :: [Lokacja]
+kratkiDoOdkrecenia = ["szyb2", "szyb6", "szyb10"]
+
+rozejrzyjSie :: StanGry2 -> IO ()
+rozejrzyjSie (lok, przedmioty, _, _, _, _) = do
+  let lokalne = [p | (p, l) <- przedmioty, l == lok]
+  putStrLn $ "Jesteś w: " ++ lok
+  opisMiejsca lok
+  if null lokalne
+    then putStrLn "Nie ma tu żadnych Rzeczów."
+    else putStrLn $ "Widzisz tutaj: " ++ unwords lokalne
+
+ukazEkwipunek :: StanGry2 -> IO ()
+ukazEkwipunek (_, _, eq, _, _, _) =
+  if null eq
+    then putStrLn "Twój ekwipunek jest pusty."
+    else putStrLn $ "Ekwipunek: " ++ unwords eq
+
+
+
+wezRzecz :: String -> StanGry2 -> IO (Maybe StanGry2, String)
+wezRzecz przedmiot (lok, przedmioty, eq, nozUzycia, lyzkaUzycia, kratki)
+  | (przedmiot, lok) `elem` przedmioty =
+      let nowePrzedmioty = filter (/= (przedmiot, lok)) przedmioty
+          nowyStan = (lok, nowePrzedmioty, przedmiot:eq, nozUzycia, lyzkaUzycia, kratki)
+      in return (Just nowyStan, "Podnosisz " ++ przedmiot ++ ".")
+  | otherwise = return (Nothing, "Nie ma tu takiego przedmiotu.")
+
+upuscRzecz :: String -> StanGry2 -> IO (Maybe StanGry2, String)
+upuscRzecz przedmiot (lok, przedmioty, eq, nozUzycia, lyzkaUzycia, kratki)
+  | przedmiot `elem` eq =
+      let nowyEq = filter (/= przedmiot) eq
+          nowyStan = (lok, (przedmiot, lok):przedmioty, nowyEq, nozUzycia, lyzkaUzycia, kratki)
+      in return (Just nowyStan, "Upuszczasz " ++ przedmiot ++ ".")
+  | otherwise = return (Nothing, "Nie masz takiego Rzeczu.")
+
+
+zrobManekina :: StanGry2 -> (StanGry2, String)
+zrobManekina (lok, ps, eq, nozUzycia, lyzkaUzycia, kratki)
+  | all (`elem` eq) ["farba", "wlosy", "papier"] =
+      let eq' = filter (`notElem` ["farba", "wlosy", "papier"]) eq
+      in ((lok, ps, "manekin" : eq', nozUzycia, lyzkaUzycia, kratki), "Stworzyłeś manekina!")
+  | otherwise = ((lok, ps, eq, nozUzycia, lyzkaUzycia, kratki), "Brakuje Ci materiałów, by stworzyć manekina.")
+
+
+
+polozManekina :: StanGry2 -> (StanGry2, String)
+polozManekina (lok, ps, eq, noz, lyz, kratki)
+  | lok /= "lozko" = ((lok, ps, eq, noz, lyz, kratki), "Manekina można położyć tylko na łóżku.")
+  | "manekin" `notElem` eq = ((lok, ps, eq, noz, lyz, kratki), "Nie masz manekina, żeby go położyć.")
+  | otherwise =
+      let eq' = filter (/= "manekin") eq
+      in ((lok, ("manekin", lok):ps, eq', noz, lyz, kratki), "Położyłeś manekina na łóżku.")
+
+
+
+zrobAtrape :: StanGry2 -> (StanGry2, String)
+zrobAtrape (lok, ps, eq, noz, lyz, kratki)
+  | all (`elem` eq) ["sznurek", "drut", "material"] =
+      let eq' = filter (`notElem` ["sznurek", "drut", "material"]) eq
+      in ((lok, ps, "atrapa_wentylacji" : eq', noz, lyz, kratki), "Stworzyłeś atrapę wentylacji!")
+  | otherwise = ((lok, ps, eq, noz, lyz, kratki), "Potrzebujesz sznurka, drutu i materiału, by zrobić atrapę.")
+
+
+
+
+polozAtrape
+  :: (Lokacja, [(Rzecz, Lokacja)], [Rzecz], Int, Int, [Lokacja])
+  -> ((Lokacja, [(Rzecz, Lokacja)], [Rzecz], Int, Int, [Lokacja]), [String], Bool)
+polozAtrape (lok, ps, eq, nozUzycia, lyzkaUzycia, kratki)
+  | lok /= "krata wentylacyjna" =
+      ((lok, ps, eq, nozUzycia, lyzkaUzycia, kratki), ["Musisz być przy wentylacji, aby umieścić atrapę."], False)
+  | not ("atrapa_wentylacji" `elem` eq) =
+      ((lok, ps, eq, nozUzycia, lyzkaUzycia, kratki), ["Nie masz atrapy przy sobie."], False)
+  | not (("krata_otwarta", lok) `elem` ps) =
+      ((lok, ps, eq, nozUzycia, lyzkaUzycia, kratki), ["Musisz najpierw rozwiercić prawdziwą wentylację."], False)
+  | otherwise =
+      let eq' = filter (/= "atrapa_wentylacji") eq
+          ps' = ("atrapa_wentylacji", lok) : ps
+      in ((lok, ps', eq', nozUzycia, lyzkaUzycia, kratki),
+          ["Założono atrapę wentylacji. Wygląda całkiem realistycznie... wpisz \"n\", aby uciec."], True)
+
+
+wierc
+  :: (Lokacja, [(Rzecz, Lokacja)], [Rzecz], Int, Int, [Lokacja])
+  -> ((Lokacja, [(Rzecz, Lokacja)], [Rzecz], Int, Int, [Lokacja]), [String])
+wierc (lok, ps, eq, nozUzycia, lyzkaUzycia, kratki)
+  | lok /= "krata wentylacyjna" =
+      ((lok, ps, eq, nozUzycia, lyzkaUzycia, kratki), ["Musisz być przy wentylacji."])
+  | not ("noz" `elem` eq || "lyzka" `elem` eq) =
+      ((lok, ps, eq, nozUzycia, lyzkaUzycia, kratki), ["Potrzebujesz noża lub łyżki, żeby wiercić."])
+  | otherwise =
+      let 
+          (nozUzycia', eqNoz, msgNoz) =
+            if "noz" `elem` eq
+              then let k = nozUzycia + 1
+                   in if k >= 3 then (k, filter (/= "noz") eq, ["Nóż się złamał!"])
+                                else (k, eq, [])
+              else (nozUzycia, eq, [])
+
+          
+          (lyzkaUzycia', eqLyzka, msgLyzka) =
+            if "lyzka" `elem` eq
+              then let s = lyzkaUzycia + 1
+                   in if s >= 3 then (s, filter (/= "lyzka") eqNoz, ["Łyżka się złamała!"])
+                                else (s, eqNoz, [])
+              else (lyzkaUzycia, eqNoz, [])
+
+          ps' =
+            if nozUzycia' >= 3 && lyzkaUzycia' >= 3
+              then ("krata_otwarta", lok) : ps
+              else ps
+
+          msg =
+            msgNoz ++ msgLyzka ++
+              if nozUzycia' >= 3 && lyzkaUzycia' >= 3
+                then ["Wentylacja została otwarta!"]
+                else ["Wierć dalej..."]
+
+      in ((lok, ps', eqLyzka, nozUzycia', lyzkaUzycia', kratki), msg)
+
+odkrec
+  :: (Lokacja, [(Rzecz, Lokacja)], [Rzecz], Int, Int, [Lokacja])
+  -> [Lokacja]
+  -> ((Lokacja, [(Rzecz, Lokacja)], [Rzecz], Int, Int, [Lokacja]), [String], Bool)
+odkrec (lok, ps, eq, noz, lyz, odk) kratkiDoOdkrecenia
+  | not (lok `elem` kratkiDoOdkrecenia) =
+      ((lok, ps, eq, noz, lyz, odk), ["Tutaj nie ma kratki do odkręcenia."], False)
+  | not ("srubokret" `elem` eq) =
+      ((lok, ps, eq, noz, lyz, odk), ["Potrzebujesz śrubokręta, by odkręcić kratkę."], False)
+  | lok `elem` odk =
+      ((lok, ps, eq, noz, lyz, odk), ["Ta kratka jest już odkręcona."], False)
+  | otherwise =
+      ((lok, ps, eq, noz, lyz, lok : odk), ["Odkręciłeś kratkę! Możesz iść dalej."], True)
+
+
+
+wykonajKomende :: String -> Gra2 ()
+wykonajKomende wejscie
+  | wejscie `elem` ["n", "s", "e", "w"] = do
+      (lok, ps, eq, nozUzycia, lyzkaUzycia,kratki) <- get
+      case znajdzPrzejscie lok wejscie (lok, ps, eq, nozUzycia, lyzkaUzycia, kratki) of
+        Just nowaLokacja -> do
+              put (nowaLokacja, ps, eq, nozUzycia, lyzkaUzycia, kratki)
+              liftIO $ putStrLn $ "Idziesz na " ++ wejscie ++ " -> " ++ nowaLokacja
+              liftIO $ opisMiejsca nowaLokacja 
+        Nothing -> liftIO $ putStrLn "Nie ma przejścia w tym kierunku."
+
+  | wejscie == "rozejrzyj" = do
+    stan <- get
+    liftIO $ rozejrzyjSie stan
+  | wejscie == "instrukcje" = liftIO $ instrukcje tekstInstrukcji
+  | wejscie == "mapa" = liftIO $ instrukcje schematMapy
+  | wejscie == "ekwipunek" = do
+    stan <- get
+    liftIO $ ukazEkwipunek stan
+
+
+
+  | "wez " `isPrefixOf` wejscie = do
+    let rzecz = drop 4 wejscie
+    stan <- get
+    (mozeNowyStan, komunikat) <- liftIO $ wezRzecz rzecz stan
+    case mozeNowyStan of
+      Just nowyStan -> put nowyStan
+      Nothing -> return ()
+    liftIO $ putStrLn komunikat
+
+ | "upusc " `isPrefixOf` wejscie = do
+    let rzecz = drop 6 wejscie
+    stan <- get
+    (mozeNowyStan, komunikat) <- liftIO $ upuscRzecz rzecz stan
+    case mozeNowyStan of
+      Just nowyStan -> put nowyStan
+      Nothing -> return ()
+    liftIO $ putStrLn komunikat
+
+
+    | wejscie == "zrob_manekina" = do
+    stan <- get
+    let (nowyStan, komunikat) = zrobManekina stan
+    put nowyStan
+    liftIO $ putStrLn komunikat
+
+
+  | wejscie == "poloz_manekina" = do
+    stan <- get
+    let (nowyStan, komunikat) = polozManekina stan
+    put nowyStan
+    liftIO $ putStrLn komunikat
+
+
+    | wejscie == "zrob_atrape" = do
+    stan <- get
+    let (nowyStan, komunikat) = zrobAtrape stan
+    put nowyStan
+    liftIO $ putStrLn komunikat
+
+
+  | wejscie == "poloz_atrape" = do
+    (lok, ps, eq, nozUzycia, lyzkaUzycia, kratki) <- get
+    let (nowyStan, komunikaty, sukces) = polozAtrape (lok, ps, eq, nozUzycia, lyzkaUzycia, kratki)
+    put nowyStan
+    if sukces
+      then liftIO $ printRed komunikaty
+      else liftIO $ printYellow komunikaty
+
+     | wejscie == "wierc" = do
+    stan <- get
+    let (nowyStan, komunikaty) = wierc stan
+    put nowyStan
+    sequence_ [liftIO $ printYellow [m] | m <- komunikaty]
+
+    | wejscie == "odkrec" = do
+    (lok, ps, eq, noz, lyz, odk) <- get
+    let (nowyStan, komunikaty, sukces) = odkrec (lok, ps, eq, noz, lyz, odk) kratkiDoOdkrecenia
+    put nowyStan
+    mapM_ (liftIO . printYellow . (:[])) komunikaty
+
+
+  | wejscie == "wyjscie" = liftIO $ putStrLn "Zakończono grę."
+  | otherwise = liftIO $ putStrLn "Nie rozumiem polecenia."
+
+petla :: Gra2 ()
+petla = do
+  liftIO $ putStr "> "
+  liftIO $ hFlush stdout
+  komenda <- liftIO getLine
+  if komenda == "wyjscie"
+    then wykonajKomende komenda
+    else wykonajKomende komenda >> petla
+
+czesc2 :: IO ()
+czesc2 = do
+                let poczatkowyStan = ("srodek celi",
+                        [ ("farba", "lozko")
+                        , ("wlosy", "lozko")
+                        , ("papier", "lozko")
+                        , ("srubokret", "toaleta")
+                        , ("lyzka", "magazyn")
+                        , ("noz", "magazyn")
+                        , ("plaszcz", "poludnie")
+                        , ("klej", "poludnie")
+                        , ("sznurek", "zlew")
+                        , ("drut", "zlew")
+                        , ("material", "zlew")
+                        ], [], 0, 0, []) 
+
+                opisMiejsca "srodek celi"
+                evalStateT petla poczatkowyStan
+
+
+
+
+
+main :: IO ()
+main = do
+        -- czesc 1
+        wypiszDialogStartowy
+        instrukcje tekstInstrukcje1
+        evalStateT ( idz Cela >> petlaGry) stanPoczatkowy
+        -- czesc 2
+        czesc2
