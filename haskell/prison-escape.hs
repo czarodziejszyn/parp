@@ -790,7 +790,6 @@ paths = Map.fromList [
 
 -- state --
 
--- speczy
 data StanGry3 = StanGry3 {
     location :: String,
     canWater :: Bool,
@@ -803,14 +802,17 @@ data StanGry3 = StanGry3 {
 
 -- move
 
+-- modify state,
 moveInternal :: String -> String -> String
 moveInternal from dir = do
     case Map.lookup (from, dir) paths of
         Nothing ->  from
         Just new_loc ->  new_loc
 
+
 move :: StanGry3 -> String -> IO(StanGry3)
 move state dir = do
+    -- check if locations with danger
     if (location state) == "fence" && dir == "S" then do
         st <- determine state "fence"
         return st
@@ -819,6 +821,7 @@ move state dir = do
         return st
     else do
         let loc = moveInternal (location state) dir
+        -- dispaly info if there is no path
         if loc == location state then do
             printRed [
                 "Nie możesz tam przejść!\n"
@@ -826,6 +829,8 @@ move state dir = do
             return state
         else do
             return state {location = loc}
+
+
 
 determine :: StanGry3 -> String -> IO(StanGry3)
 determine state "fence" = do
@@ -881,6 +886,7 @@ getBoatText = do
 deductTime :: StanGry3 -> Int -> StanGry3
 deductTime state t = state{time  = (time state) -t}
 
+-- check remaining time, print message and kill player if needed
 checkTime :: StanGry3 -> IO(StanGry3)
 checkTime state = do
     let hours = time state
@@ -916,11 +922,11 @@ waitAt state "docks" = st {guardsPresent = False}
 
 waitAt state _ = deductTime state 1
 
+-- deduct time, print text
 wait state = do
     waitText (location state)
     return ( waitAt state (location state))
 
--- return  (location state)
 
 waitText :: String -> IO()
 waitText "fence" = do
@@ -945,6 +951,7 @@ look state = do
     st <- checkTime state
     return st
 
+-- so that look can just pass state
 describeDispatch :: StanGry3 -> IO()
 describeDispatch state =
     describe (location state)
@@ -1096,10 +1103,7 @@ describe "car" = do
         ]
     lose
 
--- items
-
-fightText :: IO()
-fightText = do
+describe "fight" = do
     printYellow [
         "Strażnicy nie są przygotowani na twój atak. "
         , "Udaje ci się zakraść niedaleko jednego ze strażników. "
@@ -1108,8 +1112,7 @@ fightText = do
         ]
     printGreen ["Jesteś sam na doku..."]
 
-floatText :: IO()
-floatText = do
+describe "float" = do
     printYellow [
         "Po dłuższym czasie pompowania ponton nabrał kształtu. "
         , "Twój improwizowany majstersztyk czeka gotowy na dziewiczą podróż. "
@@ -1117,10 +1120,11 @@ floatText = do
         , "Na twoje szczęście morze jest dziś bardzo spokojne, żadna fala nie powinna pokrzyżować twoich planów.\n"
         ]
 
+-- only 2 items to use, always there no need to keep trac of inventory
 use :: StanGry3 -> String -> IO(StanGry3)
 use state "bron" = do
     if (location state) == "docks" && (guardsPresent state) then do
-        fightText
+        describe "fight"
         return state{guardsPresent = False}
     else do
         printRed ["Nie ma tu przeciwników."]
@@ -1129,7 +1133,7 @@ use state "bron" = do
 use state "ponton" = do
     if (location state) == "beach" then do
         if not (canWater state) then do
-            floatText
+            describe "float"
             return state{canWater = True}
         else do
             printRed ["Ponton jest już napompowany!"]
@@ -1138,8 +1142,11 @@ use state "ponton" = do
         printRed ["Nie jest to dobre miejsce do napompowania pontonu!"]
         return state
 
+use state _ = do
+    printRed ["Nie masz tego przedmiotu"]
 
--- win lose die
+
+-- win lose die - write text and end program
 
 win :: IO()
 win = do
@@ -1177,7 +1184,7 @@ playerDie _ = do
 
 -- game loop
 
--- utrzymanie interfejsu
+-- state is given and returned to implement interface for later case structure
 tekstInstrukcje3 :: StanGry3 -> IO(StanGry3)
 tekstInstrukcje3 state = do
     printGreen [
@@ -1194,6 +1201,7 @@ tekstInstrukcje3 state = do
 
 readCmd :: IO(String)
 readCmd = do
+    -- put prompt char
     putStr $ "\x1b[32m" ++ " > " ++ "\x1b[0m"
     cmd <- getLine
     return cmd
@@ -1201,8 +1209,10 @@ readCmd = do
 interpretCmd :: StanGry3 -> IO(StanGry3)
 interpretCmd state = do
     cmd <- readCmd
+    -- check first as exitSucces does not return IO(StanGry3)
     if cmd == "exit" then do exitSuccess
     else do
+        -- each called function needs to return IO(StanGry3)
         st <- case (words cmd) of
             ["idz", dir]    -> move state dir
             ["uzyj", item]  -> use state item
@@ -1213,16 +1223,19 @@ interpretCmd state = do
             [_]             -> do
                 printRed["nieznana komenda"]
                 return state
-
         return st
 
+-- game loop for part 3 of the game - escape island
 gameLoop :: StanGry3 -> IO()
 gameLoop state = do
-    describeDispatch state
-    checkTime state
+    -- describe scene and check time
+    look state
+    -- state is modified in functions called by interpretCmd
     st <- interpretCmd state
+    -- go to next state
     gameLoop st
 
+-- start part 3 of the game - escape island
 czesc3 :: IO ()
 czesc3 = do
     let initState = StanGry3{
@@ -1234,6 +1247,7 @@ czesc3 = do
         warnedDocks = False,
         time = 5
     }
+    -- print instruction list
     _ <- tekstInstrukcje3 initState
     gameLoop initState
 
