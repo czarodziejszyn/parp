@@ -106,13 +106,8 @@ wait :: State -> String -> State
 wait state "fence" = st {canFence =True}
     where st = deductTime state 2
 
---wait :: State -> String -> IO(State)
---wait state "docks" = do
---    waitText "docks"
---    let st = deductTime state 2
---    let st_t = st {guardsPresent = False}
---    checkTime st_t
---    return st_t
+wait state "docks" = st {guardsPresent = False}
+    where st = deductTime state 2
 
 -- by god use st <- waitWrap when reading state
 waitWrap state = do
@@ -129,8 +124,9 @@ waitText "docks" = do
     printYellow [
         "Usiadłeś w miejscu, którego nie skanują reflektory i czekasz... "
         , "Po dłuższej chwili jeden ze strażników zaczyna głośno narzekać, że na tym posterunku nic się nigdy nie dzieje. "
-        , "Przysłuchujesz się rozmowie i z radością przyjmujesz ich decyzję o skoczeniu po karty."
+        , "Przysłuchujesz się rozmowie i z radością przyjmujesz ich decyzję o skoczeniu po karty.\n"
         ]
+    printGreen ["Strażnicy odchodzą, masz okazję do działania."]
 
 waitText _ = do
     printYellow ["zmarnowałeś nieco czasu."]
