@@ -161,27 +161,19 @@ checkTime state = do
 
 -- wait
 
-
---wait :: State -> String -> State
--- wait state "fence" = do
---    let st = deductTime state 2
---    let st_t = st {canFence = True}
---    waitText "fence"
---    checkTime st_t
---    return st_t
-
-
-wait :: State -> String -> State
-wait state "fence" = st {canFence =True}
+waitAt :: State -> String -> State
+waitAt state "fence" = st {canFence =True}
     where st = deductTime state 2
 
-wait state "docks" = st {guardsPresent = False}
+waitAt state "docks" = st {guardsPresent = False}
     where st = deductTime state 2
+
+waitAt state _ = deductTime state 1
 
 -- by god use st <- waitWrap when reading state
-waitWrap state = do
+wait state = do
     waitText (location state)
-    return ( wait state (location state))
+    return ( waitAt state (location state))
 
 -- return  (location state)
 
