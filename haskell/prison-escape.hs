@@ -790,9 +790,9 @@ paths = Map.fromList [
 
 -- state --
 
+-- speczy
 data StanGry3 = StanGry3 {
     location :: String,
-    inventory :: [String],
     canWater :: Bool,
     canFence :: Bool,
     guardsPresent :: Bool,
@@ -1227,7 +1227,6 @@ czesc3 :: IO ()
 czesc3 = do
     let initState = StanGry3{
         location = "wall",
-        inventory = ["ponton"],
         canWater = False,
         canFence = False,
         guardsPresent = True,
@@ -1235,12 +1234,8 @@ czesc3 = do
         warnedDocks = False,
         time = 5
     }
-    --printGreen ["loaded \n"]
     _ <- tekstInstrukcje3 initState
     gameLoop initState
-
-
--- st = StanGry3{location = "wall",inventory = ["ponton"],canWater = False,canFence = False,guardsPresent = True, warnedFence= False, warnedDocks = False, time = 5}
 
 
 main :: IO ()
